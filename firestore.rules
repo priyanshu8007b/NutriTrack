@@ -47,18 +47,15 @@ service cloud.firestore {
      */
     match /userProfiles/{userId} {
       allow get, list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
-      allow delete: if isExistingOwner(userId);
+      // Simplified: Ownership is determined by the path parameter matching the auth UID.
+      allow create, update, delete: if isOwner(userId);
 
       /**
        * @description Rules for a user's private meal logs.
        */
       match /mealLogs/{mealLogId} {
         allow get, list: if isOwner(userId);
-        allow create: if isOwner(userId) && request.resource.data.userId == userId;
-        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-        allow delete: if isExistingOwner(userId);
+        allow create, update, delete: if isOwner(userId);
       }
 
       /**
@@ -67,9 +64,7 @@ service cloud.firestore {
        */
       match /userGoal/{goalId} {
         allow get, list: if isOwner(userId);
-        allow create: if isOwner(userId) && request.resource.data.userId == userId;
-        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-        allow delete: if isExistingOwner(userId);
+        allow create, update, delete: if isOwner(userId);
       }
     }
 

@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -81,7 +80,13 @@ export default function DashboardPage() {
   const handleVegToggle = (checked: boolean) => {
     if (!db || !user?.uid) return
     const ref = doc(db, "userProfiles", user.uid)
-    setDocumentNonBlocking(ref, { isVegOnly: checked }, { merge: true })
+    // Ensure the document has the required fields upon creation/merge
+    setDocumentNonBlocking(ref, { 
+      id: user.uid,
+      isVegOnly: checked,
+      email: user.email || (user.isAnonymous ? "guest" : "user"),
+      createdAt: userProfile?.createdAt || new Date().toISOString()
+    }, { merge: true })
   }
 
   // --- Data Processing ---
@@ -424,10 +429,11 @@ function SummaryCard({ title, current, target, unit, icon: Icon, color }: any) {
       <CardContent className="p-6 space-y-4">
         <div className="flex items-center justify-between">
           <div className={cn(
-            "w-10 h-10 rounded-xl flex items-center justify-center",
-            `bg-${color}/10`
+            "w-10 h-10 rounded-xl flex items-center justify-center bg-primary/10",
+            color === "accent" && "bg-accent/10",
+            color === "chart-3" && "bg-chart-3/10"
           )}>
-            <Icon className={cn("w-5 h-5", `text-${color}`)} />
+            <Icon className={cn("w-5 h-5 text-primary", color === "accent" && "text-accent", color === "chart-3" && "text-chart-3")} />
           </div>
           <span className="text-xs font-bold text-muted-foreground bg-secondary/50 px-2 py-1 rounded-full uppercase tracking-wider">
             {percentage}% Goal

@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -141,7 +140,12 @@ export default function LogMealPage() {
   const handleVegToggle = (checked: boolean) => {
     if (!db || !user?.uid) return
     const ref = doc(db, "userProfiles", user.uid)
-    setDocumentNonBlocking(ref, { isVegOnly: checked }, { merge: true })
+    setDocumentNonBlocking(ref, { 
+      id: user.uid,
+      isVegOnly: checked,
+      email: user.email || (user.isAnonymous ? "guest" : "user"),
+      createdAt: userProfile?.createdAt || new Date().toISOString()
+    }, { merge: true })
   }
 
   const formatServing = (serving: string) => {
@@ -627,5 +631,4 @@ function MacroDetailCard({ label, current, target, unit, color }: any) {
         />
       </div>
     </div>
-  )
 }
