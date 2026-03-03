@@ -12,7 +12,8 @@ import {
   Sparkles,
   Utensils,
   LogIn,
-  Leaf
+  Leaf,
+  Apple
 } from "lucide-react"
 import Link from "next/link"
 import { 
@@ -132,7 +133,7 @@ export default function DashboardPage() {
     return (
       <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8 flex flex-col items-center justify-center min-h-[80vh] text-center">
         <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
-          <Utensils className="w-10 h-10 text-primary" />
+          <Apple className="w-10 h-10 text-primary" />
         </div>
         <div className="max-w-md space-y-4">
           <h1 className="text-4xl font-black tracking-tight text-foreground">Track Your Indian Nutrition</h1>
