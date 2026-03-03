@@ -6,7 +6,7 @@ import { FirebaseClientProvider } from "@/firebase";
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: 'IndiPlate - Indian Nutrition Tracker',
+  title: 'NutriTrack - Indian Nutrition Tracker',
   description: 'Your smart guide to balanced Indian nutrition tracking',
 };
 

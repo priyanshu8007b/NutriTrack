@@ -64,7 +64,7 @@ export function AppSidebar() {
             <UtensilsCrossed className="text-primary-foreground w-5 h-5" />
           </div>
           <span className="font-bold text-xl tracking-tight text-foreground">
-            Indi<span className="text-primary">Plate</span>
+            Nutri<span className="text-primary">Track</span>
           </span>
         </div>
       </SidebarHeader>

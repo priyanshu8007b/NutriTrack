@@ -137,7 +137,7 @@ export default function DashboardPage() {
         <div className="max-w-md space-y-4">
           <h1 className="text-4xl font-black tracking-tight text-foreground">Track Your Indian Nutrition</h1>
           <p className="text-lg text-muted-foreground">
-            Sign in to IndiPlate to start logging your meals, setting nutritional goals, and getting AI-powered Indian dish suggestions.
+            Sign in to NutriTrack to start logging your meals, setting nutritional goals, and getting AI-powered Indian dish suggestions.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 pt-4 justify-center">
             <Button asChild size="lg" className="bg-primary hover:bg-primary/90 font-bold px-8 h-14 text-lg">
@@ -162,7 +162,7 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
             {user?.displayName ? `Namaste, ${user.displayName.split(' ')[0]}!` : "Namaste!"}
           </h1>
-          <p className="text-muted-foreground">Welcome to IndiPlate. Here's your overview for today.</p>
+          <p className="text-muted-foreground">Welcome to NutriTrack. Here's your overview for today.</p>
         </div>
         
         <div className="flex flex-wrap items-center gap-4">
