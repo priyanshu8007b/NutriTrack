@@ -2,41 +2,91 @@
 "use client"
 
 import * as React from "react"
-import { Sparkles, Loader2, ArrowRight, Info, CheckCircle2, Utensils, Zap } from "lucide-react"
+import { Sparkles, Loader2, ArrowRight, Info, CheckCircle2, Utensils, Zap, Target } from "lucide-react"
 import { smartIndianMealSuggestion, SmartIndianMealSuggestionOutput } from "@/ai/flows/smart-indian-meal-suggestion"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { DEFAULT_GOALS } from "@/lib/mock-data"
+import { DEFAULT_GOALS, INDIAN_FOOD_DATABASE } from "@/lib/mock-data"
 import { cn } from "@/lib/utils"
+import { 
+  useUser, 
+  useFirestore, 
+  useCollection, 
+  useDoc, 
+  useMemoFirebase 
+} from "@/firebase"
+import { collection, doc } from "firebase/firestore"
 
 export default function SuggestionsPage() {
+  const { user } = useUser()
+  const db = useFirestore()
+  
   const [loading, setLoading] = React.useState(false)
   const [mealType, setMealType] = React.useState("Lunch")
   const [result, setResult] = React.useState<SmartIndianMealSuggestionOutput | null>(null)
+  const [mounted, setMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // --- Real-time Data ---
+  
+  const userGoalRef = useMemoFirebase(() => {
+    if (!db || !user?.uid) return null
+    return doc(db, "userProfiles", user.uid, "userGoal", "userGoal")
+  }, [db, user?.uid])
+  const { data: userGoal } = useDoc(userGoalRef)
+
+  const mealLogsQuery = useMemoFirebase(() => {
+    if (!db || !user?.uid) return null
+    return collection(db, "userProfiles", user.uid, "mealLogs")
+  }, [db, user?.uid])
+  const { data: allLogs } = useCollection(mealLogsQuery)
+
+  const todayTotals = React.useMemo(() => {
+    if (!allLogs || !mounted) return { calories: 0, protein: 0, carbs: 0, fats: 0 }
+    const now = new Date()
+    const todayLogs = allLogs.filter(log => {
+      const logDate = new Date(log.loggedAt)
+      return logDate.getDate() === now.getDate() &&
+             logDate.getMonth() === now.getMonth() &&
+             logDate.getFullYear() === now.getFullYear()
+    })
+
+    return todayLogs.reduce((acc, log) => {
+      const food = INDIAN_FOOD_DATABASE.find(f => f.id.toString() === log.foodId)
+      if (!food) return acc
+      return {
+        calories: acc.calories + (food.calories * log.quantity),
+        protein: acc.protein + (food.protein * log.quantity),
+        carbs: acc.carbs + (food.carbs * log.quantity),
+        fats: acc.fats + (food.fats * log.quantity),
+      }
+    }, { calories: 0, protein: 0, carbs: 0, fats: 0 })
+  }, [allLogs, mounted])
+
+  const calorieTarget = userGoal?.targetCalories || DEFAULT_GOALS.calories
+  const proteinTarget = userGoal ? Math.round(userGoal.targetCalories * userGoal.targetProteinRatio / 4) : DEFAULT_GOALS.protein
+  const carbsTarget = userGoal ? Math.round(userGoal.targetCalories * userGoal.targetCarbsRatio / 4) : DEFAULT_GOALS.carbs
+  const fatsTarget = userGoal ? Math.round(userGoal.targetCalories * userGoal.targetFatsRatio / 9) : DEFAULT_GOALS.fats
 
   const handleSuggest = async () => {
+    if (!user) return
     setLoading(true)
     try {
-      // Current consumed mock state - in a real app this would come from Firestore
-      const consumed = {
-        calories: 1200,
-        protein: 45,
-        carbs: 150,
-        fats: 35
-      }
-
       const output = await smartIndianMealSuggestion({
-        dailyCalorieGoal: DEFAULT_GOALS.calories,
-        dailyProteinGoal: DEFAULT_GOALS.protein,
-        dailyCarbGoal: DEFAULT_GOALS.carbs,
-        dailyFatGoal: DEFAULT_GOALS.fats,
-        consumedCalories: consumed.calories,
-        consumedProtein: consumed.protein,
-        consumedCarbs: consumed.carbs,
-        consumedFats: consumed.fats,
+        dailyCalorieGoal: calorieTarget,
+        dailyProteinGoal: proteinTarget,
+        dailyCarbGoal: carbsTarget,
+        dailyFatGoal: fatsTarget,
+        consumedCalories: todayTotals.calories,
+        consumedProtein: todayTotals.protein,
+        consumedCarbs: todayTotals.carbs,
+        consumedFats: todayTotals.fats,
         currentMealType: mealType
       })
       setResult(output)
@@ -46,6 +96,8 @@ export default function SuggestionsPage() {
       setLoading(false)
     }
   }
+
+  if (!mounted) return null
 
   return (
     <div className="p-6 md:p-8 max-w-6xl mx-auto space-y-10 animate-in fade-in duration-500">
@@ -61,65 +113,99 @@ export default function SuggestionsPage() {
             Smart Indian Suggestions
           </h1>
           <p className="text-muted-foreground text-lg md:text-xl max-w-2xl font-medium leading-relaxed">
-            Our AI analyzes your remaining macros and suggests authentic Indian meals to help you hit your daily targets precisely.
+            Our AI analyzes your real-time remaining macros to suggest authentic Indian meals.
           </p>
         </div>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        <Card className="lg:col-span-4 shadow-xl border-border/50 bg-card/50 backdrop-blur-sm sticky top-8">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-xl font-bold flex items-center gap-2">
-              <Utensils className="w-5 h-5 text-primary" />
-              Preferences
-            </CardTitle>
-            <CardDescription>Tailor your next authentic meal</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-3">
-              <label className="text-sm font-bold text-foreground/80 uppercase tracking-tight">What's your next meal?</label>
-              <Select value={mealType} onValueChange={setMealType}>
-                <SelectTrigger className="h-12 border-border/50 bg-secondary/20 focus:ring-primary/20 transition-all">
-                  <SelectValue placeholder="Select meal type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Breakfast">Breakfast</SelectItem>
-                  <SelectItem value="Lunch">Lunch</SelectItem>
-                  <SelectItem value="Dinner">Dinner</SelectItem>
-                  <SelectItem value="Snack">Snack</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button 
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-black h-14 shadow-lg shadow-primary/30 group relative overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98]"
-              onClick={handleSuggest}
-              disabled={loading}
-            >
-              <div className="relative flex items-center justify-center gap-2">
-                {loading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Analyzing Spices...
-                  </>
-                ) : (
-                  <>
-                    Get Smart Suggestion
-                    <Sparkles className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-                  </>
-                )}
+        <div className="lg:col-span-4 space-y-6">
+          <Card className="shadow-xl border-border/50 bg-card/50 backdrop-blur-sm sticky top-8">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-xl font-bold flex items-center gap-2">
+                <Utensils className="w-5 h-5 text-primary" />
+                Preferences
+              </CardTitle>
+              <CardDescription>Tailor your next authentic meal</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-3">
+                <label className="text-sm font-bold text-foreground/80 uppercase tracking-tight">What's your next meal?</label>
+                <Select value={mealType} onValueChange={setMealType}>
+                  <SelectTrigger className="h-12 border-border/50 bg-secondary/20 focus:ring-primary/20 transition-all">
+                    <SelectValue placeholder="Select meal type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Breakfast">Breakfast</SelectItem>
+                    <SelectItem value="Lunch">Lunch</SelectItem>
+                    <SelectItem value="Dinner">Dinner</SelectItem>
+                    <SelectItem value="Snack">Snack</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            </Button>
-            
-            <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10">
-              <div className="flex gap-3">
-                <Info className="w-5 h-5 text-primary shrink-0" />
-                <p className="text-[11px] text-muted-foreground leading-relaxed font-medium">
-                  Suggestions consider your <strong>logged calories</strong> and <strong>macro balance</strong> for today to find the perfect dish.
-                </p>
+              <Button 
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-black h-14 shadow-lg shadow-primary/30 group relative overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98]"
+                onClick={handleSuggest}
+                disabled={loading || !user}
+              >
+                <div className="relative flex items-center justify-center gap-2">
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Analyzing Spices...
+                    </>
+                  ) : (
+                    <>
+                      Get Smart Suggestion
+                      <Sparkles className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                    </>
+                  )}
+                </div>
+              </Button>
+              
+              <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10">
+                <div className="flex gap-3">
+                  <Info className="w-5 h-5 text-primary shrink-0" />
+                  <p className="text-[11px] text-muted-foreground leading-relaxed font-medium">
+                    Suggestions consider your <strong>logged calories</strong> ({Math.round(todayTotals.calories)}) and <strong>macro balance</strong> for today.
+                  </p>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-sm border-border/50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-black flex items-center gap-2">
+                <Target className="w-4 h-4" />
+                Current Status
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-[10px] font-black uppercase tracking-tighter">
+                  <span>Calories</span>
+                  <span>{Math.round(todayTotals.calories)} / {calorieTarget}</span>
+                </div>
+                <Progress value={(todayTotals.calories / calorieTarget) * 100} className="h-1" />
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="text-center">
+                  <span className="block text-[8px] font-black uppercase text-muted-foreground">Prot</span>
+                  <span className="text-xs font-bold text-accent">{Math.round(todayTotals.protein)}g</span>
+                </div>
+                <div className="text-center">
+                  <span className="block text-[8px] font-black uppercase text-muted-foreground">Carb</span>
+                  <span className="text-xs font-bold">{Math.round(todayTotals.carbs)}g</span>
+                </div>
+                <div className="text-center">
+                  <span className="block text-[8px] font-black uppercase text-muted-foreground">Fat</span>
+                  <span className="text-xs font-bold">{Math.round(todayTotals.fats)}g</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         <div className="lg:col-span-8">
           {!result && !loading && (
@@ -203,13 +289,6 @@ export default function SuggestionsPage() {
                           <MacroValue label="Protein" value={suggestion.estimatedMacros.protein} unit="g" />
                           <MacroValue label="Carbs" value={suggestion.estimatedMacros.carbs} unit="g" />
                           <MacroValue label="Fats" value={suggestion.estimatedMacros.fats} unit="g" />
-                        </div>
-
-                        <div className="flex pt-4">
-                          <Button className="w-full bg-foreground text-background font-black hover:bg-primary hover:text-primary-foreground h-14 rounded-2xl group/btn transition-all">
-                            Add to {mealType} Log
-                            <ArrowRight className="w-5 h-5 ml-2 group-hover/btn:translate-x-1 transition-transform" />
-                          </Button>
                         </div>
                       </div>
                     </div>
