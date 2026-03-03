@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A GenAI tool for suggesting culturally relevant Indian dishes or meal combinations to meet remaining daily macro targets.
@@ -49,9 +50,16 @@ export type SmartIndianMealSuggestionOutput = z.infer<typeof SmartIndianMealSugg
 
 export async function smartIndianMealSuggestion(input: SmartIndianMealSuggestionInput): Promise<SmartIndianMealSuggestionOutput> {
   try {
+    if (!process.env.GOOGLE_GENAI_API_KEY || process.env.GOOGLE_GENAI_API_KEY === 'YOUR_API_KEY_HERE') {
+      throw new Error("GOOGLE_GENAI_API_KEY is missing. Please add it to your .env file or Vercel Environment Variables.");
+    }
     return await smartIndianMealSuggestionFlow(input);
   } catch (error: any) {
     console.error("AI Flow Error:", error);
+    const message = error.message || "";
+    if (message.includes('API_KEY_INVALID') || message.includes('403') || message.includes('401')) {
+      throw new Error("Your Google AI API Key is invalid. Please get a fresh key from https://aistudio.google.com/app/apikey");
+    }
     throw new Error(error.message || "The AI nutritionist is currently offline. Please check your API key and try again.");
   }
 }
