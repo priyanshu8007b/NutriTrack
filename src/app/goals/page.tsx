@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -29,7 +30,7 @@ export default function GoalsPage() {
   const [goals, setGoals] = React.useState(DEFAULT_GOALS)
   const [hasCalculated, setHasCalculated] = React.useState(false)
 
-  // Calculator State
+  // Calculator State - Initialized to blank strings as requested
   const [metrics, setMetrics] = React.useState({
     weight: "",
     height: "",
@@ -133,11 +134,11 @@ export default function GoalsPage() {
 
     let tdee = Math.round(bmr * act)
     
-    // Apply Goal Offsets
+    // Apply Goal Offsets as requested
     if (metrics.goal === "loss") {
-      tdee = Math.max(1200, tdee - 400)
+      tdee = Math.max(1200, tdee - 400) // Fat loss: -400 kcal
     } else if (metrics.goal === "gain") {
-      tdee += 300
+      tdee += 300 // Muscle gain: +300 kcal
     }
 
     setGoals(prev => ({ ...prev, calories: tdee }))
