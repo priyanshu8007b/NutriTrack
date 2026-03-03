@@ -11,7 +11,7 @@ import {
   LogOut,
   ChevronRight,
   LogIn,
-  Apple,
+  Salad,
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -62,7 +62,7 @@ export function AppSidebar() {
       <SidebarHeader className="h-16 flex flex-row items-center px-6 border-b border-border/50">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-            <Apple className="text-primary-foreground w-5 h-5" />
+            <Salad className="text-primary-foreground w-5 h-5" />
           </div>
           <span className="font-bold text-xl tracking-tight text-foreground">
             Nutri<span className="text-primary">Track</span>

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Apple, ArrowRight, Sparkles, ShieldCheck, Loader2 } from "lucide-react"
+import { Salad, ArrowRight, Sparkles, ShieldCheck, Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useAuth, useUser, initiateAnonymousSignIn, initiateGoogleSignIn } from "@/firebase"
 import { Button } from "@/components/ui/button"
@@ -34,7 +34,7 @@ export default function LoginPage() {
       <div className="max-w-md w-full space-y-8">
         <div className="flex flex-col items-center text-center space-y-4">
           <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center shadow-xl shadow-primary/20">
-            <Apple className="text-primary-foreground w-8 h-8" />
+            <Salad className="text-primary-foreground w-8 h-8" />
           </div>
           <div>
             <h1 className="text-4xl font-black tracking-tight text-foreground">
