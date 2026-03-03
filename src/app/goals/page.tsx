@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -119,7 +118,7 @@ export default function GoalsPage() {
       toast({
         variant: "destructive",
         title: "Missing Information",
-        description: "Please enter valid weight, height, and age to calculate.",
+        description: "Please enter your weight, height, and age to calculate.",
       })
       return
     }
@@ -212,7 +211,7 @@ export default function GoalsPage() {
                 <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Age (years)</Label>
                 <Input 
                   type="number" 
-                  placeholder="25" 
+                  placeholder="Years" 
                   className="h-12 bg-secondary/10 border-none"
                   value={metrics.age} 
                   onChange={(e) => setMetrics(prev => ({ ...prev, age: e.target.value }))} 
@@ -222,7 +221,7 @@ export default function GoalsPage() {
                 <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Weight (kg)</Label>
                 <Input 
                   type="number" 
-                  placeholder="70" 
+                  placeholder="kg" 
                   className="h-12 bg-secondary/10 border-none"
                   value={metrics.weight} 
                   onChange={(e) => setMetrics(prev => ({ ...prev, weight: e.target.value }))} 
@@ -232,7 +231,7 @@ export default function GoalsPage() {
                 <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Height (cm)</Label>
                 <Input 
                   type="number" 
-                  placeholder="175" 
+                  placeholder="cm" 
                   className="h-12 bg-secondary/10 border-none"
                   value={metrics.height} 
                   onChange={(e) => setMetrics(prev => ({ ...prev, height: e.target.value }))} 
