@@ -2,35 +2,31 @@
 "use client"
 
 import * as React from "react"
-import { Target, Save, Info, RefreshCcw, Calculator as CalcIcon } from "lucide-react"
+import { Target, Save, Info, RefreshCcw, Calculator as CalcIcon, ChevronRight } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { DEFAULT_GOALS } from "@/lib/mock-data"
 import { useToast } from "@/hooks/use-toast"
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger,
-  DialogFooter
-} from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { cn } from "@/lib/utils"
 
 export default function GoalsPage() {
   const [goals, setGoals] = React.useState(DEFAULT_GOALS)
   const { toast } = useToast()
 
   // Calculator State
-  const [weight, setWeight] = React.useState("")
-  const [height, setHeight] = React.useState("")
-  const [age, setAge] = React.useState("")
-  const [gender, setGender] = React.useState("male")
-  const [activity, setActivity] = React.useState("1.2") // Multiplier
+  const [metrics, setMetrics] = React.useState({
+    weight: "",
+    height: "",
+    age: "",
+    gender: "male",
+    activity: "1.2"
+  })
+
+  const [hasCalculated, setHasCalculated] = React.useState(false)
 
   const handleSave = () => {
     toast({
@@ -41,6 +37,14 @@ export default function GoalsPage() {
 
   const handleReset = () => {
     setGoals(DEFAULT_GOALS)
+    setHasCalculated(false)
+    setMetrics({
+      weight: "",
+      height: "",
+      age: "",
+      gender: "male",
+      activity: "1.2"
+    })
     toast({
       title: "Goals Reset",
       description: "Targets returned to standard recommendations.",
@@ -48,23 +52,23 @@ export default function GoalsPage() {
   }
 
   const calculateCalories = () => {
-    const w = parseFloat(weight)
-    const h = parseFloat(height)
-    const a = parseFloat(age)
-    const act = parseFloat(activity)
+    const w = parseFloat(metrics.weight)
+    const h = parseFloat(metrics.height)
+    const a = parseFloat(metrics.age)
+    const act = parseFloat(metrics.activity)
 
     if (isNaN(w) || isNaN(h) || isNaN(a)) {
       toast({
         variant: "destructive",
         title: "Missing Information",
-        description: "Please enter valid weight, height, and age.",
+        description: "Please enter valid weight, height, and age to calculate.",
       })
       return
     }
 
     // Harris-Benedict Equation
     let bmr = 0
-    if (gender === "male") {
+    if (metrics.gender === "male") {
       bmr = 88.362 + (13.397 * w) + (4.799 * h) - (5.677 * a)
     } else {
       bmr = 447.593 + (9.247 * w) + (3.098 * h) - (4.330 * a)
@@ -72,9 +76,10 @@ export default function GoalsPage() {
 
     const tdee = Math.round(bmr * act)
     setGoals(prev => ({ ...prev, calories: tdee }))
+    setHasCalculated(true)
     
     toast({
-      title: "Calories Calculated",
+      title: "Calculation Complete",
       description: `Target set to ${tdee} kcal based on your metrics.`,
     })
   }
@@ -86,7 +91,7 @@ export default function GoalsPage() {
   const fatsPercent = totalCaloriesFromMacros > 0 ? ((goals.fats * 9) / totalCaloriesFromMacros) * 100 : 0
 
   return (
-    <div className="p-6 md:p-8 max-w-4xl mx-auto space-y-8">
+    <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-8">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-4xl font-black tracking-tight text-foreground">Nutritional Goals</h1>
@@ -104,165 +109,195 @@ export default function GoalsPage() {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <Card className="shadow-sm border-border/50">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <div>
-              <CardTitle className="text-xl font-bold flex items-center gap-2">
-                <Target className="w-5 h-5 text-primary" />
-                Calorie Target
-              </CardTitle>
-              <CardDescription>Set your daily energy expenditure goal</CardDescription>
-            </div>
-            
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-primary hover:bg-primary/10 rounded-full h-10 w-10">
-                  <CalcIcon className="w-5 h-5" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>TDEE Calculator</DialogTitle>
-                  <DialogDescription>
-                    Estimate your daily calorie needs based on your metrics and exercise routine.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="gender" className="text-right">Gender</Label>
-                    <Select value={gender} onValueChange={setGender}>
-                      <SelectTrigger className="col-span-3">
-                        <SelectValue placeholder="Select gender" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="male">Male</SelectItem>
-                        <SelectItem value="female">Female</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="weight" className="text-right font-medium">Weight (kg)</Label>
-                    <Input id="weight" type="number" placeholder="70" className="col-span-3" value={weight} onChange={(e) => setWeight(e.target.value)} />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="height" className="text-right font-medium">Height (cm)</Label>
-                    <Input id="height" type="number" placeholder="175" className="col-span-3" value={height} onChange={(e) => setHeight(e.target.value)} />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="age" className="text-right font-medium">Age</Label>
-                    <Input id="age" type="number" placeholder="25" className="col-span-3" value={age} onChange={(e) => setAge(e.target.value)} />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="activity" className="text-right font-medium">Exercise</Label>
-                    <Select value={activity} onValueChange={setActivity}>
-                      <SelectTrigger className="col-span-3">
-                        <SelectValue placeholder="Select activity level" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1.2">Sedentary (No Exercise)</SelectItem>
-                        <SelectItem value="1.375">Light (1-2 days/week)</SelectItem>
-                        <SelectItem value="1.55">Moderate (3-5 days/week)</SelectItem>
-                        <SelectItem value="1.725">Active (6-7 days/week)</SelectItem>
-                        <SelectItem value="1.9">Extra Active (Hard physical job)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button type="submit" onClick={calculateCalories} className="w-full h-12 font-bold">Calculate & Apply</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </CardHeader>
-          <CardContent className="space-y-8 pt-6">
-            <div className="text-center py-8 bg-secondary/10 rounded-3xl border border-primary/10">
-              <span className="text-6xl font-black text-primary">{goals.calories}</span>
-              <span className="text-lg font-bold text-muted-foreground block mt-2">kcal / day</span>
-            </div>
-            <div className="space-y-4">
-              <Slider 
-                value={[goals.calories]} 
-                min={1200} 
-                max={4000} 
-                step={50}
-                onValueChange={([val]) => setGoals(prev => ({ ...prev, calories: val }))}
-              />
-              <div className="flex justify-between text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                <span>1200 kcal</span>
-                <span>4000 kcal</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm border-border/50">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <Card className="lg:col-span-7 shadow-sm border-border/50">
           <CardHeader>
-            <CardTitle className="text-xl font-bold">Macro Distribution</CardTitle>
-            <CardDescription>Customize your daily nutrient balance</CardDescription>
+            <CardTitle className="text-2xl font-black flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <CalcIcon className="w-6 h-6 text-primary" />
+              </div>
+              Step 1: Calculate Your Needs
+            </CardTitle>
+            <CardDescription>Enter your metrics to determine your ideal daily intake</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-8 pt-6">
-            <MacroInput 
-              label="Protein (g)" 
-              value={goals.protein} 
-              onChange={(val) => setGoals(prev => ({ ...prev, protein: val }))}
-              color="primary"
-            />
-            <MacroInput 
-              label="Carbohydrates (g)" 
-              value={goals.carbs} 
-              onChange={(val) => setGoals(prev => ({ ...prev, carbs: val }))}
-              color="accent"
-            />
-            <MacroInput 
-              label="Fats (g)" 
-              value={goals.fats} 
-              onChange={(val) => setGoals(prev => ({ ...prev, fats: val }))}
-              color="foreground"
-            />
-            
-            <div className="pt-4 border-t border-border/50 space-y-3">
-              <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                <span>Energy Breakdown</span>
-                <span>Total: {totalCaloriesFromMacros} kcal</span>
+          <CardContent className="space-y-8 pt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Gender</Label>
+                <Select value={metrics.gender} onValueChange={(val) => setMetrics(prev => ({ ...prev, gender: val }))}>
+                  <SelectTrigger className="h-12 bg-secondary/10 border-none">
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="h-4 w-full bg-secondary/30 rounded-full flex overflow-hidden">
-                <div style={{ width: `${proteinPercent}%` }} className="bg-primary h-full transition-all duration-500" />
-                <div style={{ width: `${carbsPercent}%` }} className="bg-accent h-full transition-all duration-500" />
-                <div style={{ width: `${fatsPercent}%` }} className="bg-foreground h-full opacity-60 transition-all duration-500" />
+              <div className="space-y-3">
+                <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Age (years)</Label>
+                <Input 
+                  type="number" 
+                  placeholder="25" 
+                  className="h-12 bg-secondary/10 border-none"
+                  value={metrics.age} 
+                  onChange={(e) => setMetrics(prev => ({ ...prev, age: e.target.value }))} 
+                />
               </div>
-              <div className="flex flex-wrap gap-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground pt-1">
-                <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-primary" /> {proteinPercent.toFixed(0)}% Protein</span>
-                <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-accent" /> {carbsPercent.toFixed(0)}% Carbs</span>
-                <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-foreground/60" /> {fatsPercent.toFixed(0)}% Fats</span>
+              <div className="space-y-3">
+                <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Weight (kg)</Label>
+                <Input 
+                  type="number" 
+                  placeholder="70" 
+                  className="h-12 bg-secondary/10 border-none"
+                  value={metrics.weight} 
+                  onChange={(e) => setMetrics(prev => ({ ...prev, weight: e.target.value }))} 
+                />
+              </div>
+              <div className="space-y-3">
+                <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Height (cm)</Label>
+                <Input 
+                  type="number" 
+                  placeholder="175" 
+                  className="h-12 bg-secondary/10 border-none"
+                  value={metrics.height} 
+                  onChange={(e) => setMetrics(prev => ({ ...prev, height: e.target.value }))} 
+                />
               </div>
             </div>
+
+            <div className="space-y-3">
+              <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Activity Level</Label>
+              <Select value={metrics.activity} onValueChange={(val) => setMetrics(prev => ({ ...prev, activity: val }))}>
+                <SelectTrigger className="h-12 bg-secondary/10 border-none">
+                  <SelectValue placeholder="Select activity level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1.2">Sedentary (No Exercise)</SelectItem>
+                  <SelectItem value="1.375">Light (1-2 days/week)</SelectItem>
+                  <SelectItem value="1.55">Moderate (3-5 days/week)</SelectItem>
+                  <SelectItem value="1.725">Active (6-7 days/week)</SelectItem>
+                  <SelectItem value="1.9">Extra Active (Hard physical job)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button onClick={calculateCalories} className="w-full h-14 text-lg font-bold group">
+              Calculate Daily Calories
+              <ChevronRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </Button>
+
+            {hasCalculated && (
+              <div className="pt-8 border-t border-dashed border-border/50 animate-in fade-in slide-in-from-top-4">
+                <div className="text-center py-8 bg-primary/5 rounded-3xl border border-primary/20 relative overflow-hidden">
+                  <div className="absolute top-2 right-4 flex items-center gap-1">
+                    <Target className="w-3 h-3 text-primary" />
+                    <span className="text-[10px] font-black uppercase tracking-tighter text-primary">Target Calculated</span>
+                  </div>
+                  <span className="text-6xl font-black text-primary">{goals.calories}</span>
+                  <span className="text-lg font-bold text-muted-foreground block mt-2">kcal / day</span>
+                </div>
+                
+                <div className="mt-8 space-y-4 px-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Fine-tune Target</Label>
+                    <span className="text-sm font-bold">{goals.calories} kcal</span>
+                  </div>
+                  <Slider 
+                    value={[goals.calories]} 
+                    min={1200} 
+                    max={4000} 
+                    step={50}
+                    onValueChange={([val]) => setGoals(prev => ({ ...prev, calories: val }))}
+                  />
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
-      </div>
 
-      <Card className="bg-primary/5 border-primary/20">
-        <CardContent className="p-6 flex gap-4">
-          <Info className="w-6 h-6 text-primary shrink-0" />
-          <div className="space-y-2">
-            <p className="font-black text-primary uppercase tracking-widest text-xs">A note from PaushtikPath</p>
-            <p className="text-muted-foreground leading-relaxed">
-              Calculations are based on the Harris-Benedict formula. These goals are estimates; for competitive training or medical conditions, we recommend consulting a certified nutritionist.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+        <div className="lg:col-span-5 space-y-8">
+          <Card className="shadow-sm border-border/50 overflow-hidden">
+            <CardHeader className="bg-secondary/10 pb-6">
+              <CardTitle className="text-xl font-bold">Step 2: Macro Balance</CardTitle>
+              <CardDescription>Adjust your daily nutrient distribution</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-8 pt-8">
+              <MacroInput 
+                label="Protein (g)" 
+                value={goals.protein} 
+                onChange={(val) => setGoals(prev => ({ ...prev, protein: val }))}
+                color="primary"
+                desc="Building blocks for muscle"
+              />
+              <MacroInput 
+                label="Carbohydrates (g)" 
+                value={goals.carbs} 
+                onChange={(val) => setGoals(prev => ({ ...prev, carbs: val }))}
+                color="accent"
+                desc="Primary energy source"
+              />
+              <MacroInput 
+                label="Fats (g)" 
+                value={goals.fats} 
+                onChange={(val) => setGoals(prev => ({ ...prev, fats: val }))}
+                color="foreground"
+                desc="Hormonal & brain health"
+              />
+              
+              <div className="pt-8 border-t border-border/50 space-y-4">
+                <div className="flex justify-between items-end text-xs font-black uppercase tracking-wider text-muted-foreground">
+                  <span>Energy Breakdown</span>
+                  <span className="text-foreground text-sm">{totalCaloriesFromMacros} / {goals.calories} kcal</span>
+                </div>
+                <div className="h-4 w-full bg-secondary/30 rounded-full flex overflow-hidden">
+                  <div style={{ width: `${proteinPercent}%` }} className="bg-primary h-full transition-all duration-500" />
+                  <div style={{ width: `${carbsPercent}%` }} className="bg-accent h-full transition-all duration-500" />
+                  <div style={{ width: `${fatsPercent}%` }} className="bg-foreground h-full opacity-60 transition-all duration-500" />
+                </div>
+                <div className="flex flex-wrap gap-y-2 gap-x-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground pt-1">
+                  <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-primary" /> {proteinPercent.toFixed(0)}% Protein</span>
+                  <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-accent" /> {carbsPercent.toFixed(0)}% Carbs</span>
+                  <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-foreground/60" /> {fatsPercent.toFixed(0)}% Fats</span>
+                </div>
+
+                {totalCaloriesFromMacros > goals.calories && (
+                  <div className="p-3 bg-destructive/10 text-destructive text-[10px] font-bold uppercase tracking-tight rounded-lg flex items-center gap-2">
+                    <Info className="w-3 h-3" />
+                    Warning: Macro total exceeds calorie target.
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-primary/5 border-primary/20">
+            <CardContent className="p-6 flex gap-4">
+              <Info className="w-6 h-6 text-primary shrink-0" />
+              <div className="space-y-2">
+                <p className="font-black text-primary uppercase tracking-widest text-xs">PaushtikPath Guidance</p>
+                <p className="text-muted-foreground text-xs leading-relaxed">
+                  These targets are based on the Harris-Benedict formula. Remember that actual needs may vary by up to 10% based on individual metabolism.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   )
 }
 
-function MacroInput({ label, value, onChange, color }: any) {
+function MacroInput({ label, value, onChange, color, desc }: any) {
   const colorClass = color === "primary" ? "text-primary" : color === "accent" ? "text-accent" : "text-foreground"
   
   return (
     <div className="space-y-3">
       <div className="flex justify-between items-end">
-        <label className="text-sm font-bold text-foreground">{label}</label>
+        <div>
+          <label className="text-sm font-black text-foreground uppercase tracking-tight">{label}</label>
+          <p className="text-[10px] text-muted-foreground font-medium">{desc}</p>
+        </div>
         <div className="flex items-baseline gap-1">
           <span className={`text-xl font-black ${colorClass}`}>{value}</span>
           <span className="text-xs font-bold text-muted-foreground">g</span>
@@ -270,8 +305,8 @@ function MacroInput({ label, value, onChange, color }: any) {
       </div>
       <Slider 
         value={[value]} 
-        min={20} 
-        max={300} 
+        min={10} 
+        max={400} 
         step={5}
         onValueChange={([val]) => onChange(val)}
       />
