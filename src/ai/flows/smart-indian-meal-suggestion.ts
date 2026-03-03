@@ -10,6 +10,9 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
+// Increase timeout for Vercel deployment (Pro/Hobby defaults are low)
+export const maxDuration = 60;
+
 const SmartIndianMealSuggestionInputSchema = z.object({
   dailyCalorieGoal: z.number().describe("The user's daily calorie target."),
   dailyProteinGoal: z.number().describe("The user's daily protein target in grams."),
@@ -47,27 +50,37 @@ const SmartIndianMealSuggestionOutputSchema = z.object({
 });
 export type SmartIndianMealSuggestionOutput = z.infer<typeof SmartIndianMealSuggestionOutputSchema>;
 
+/**
+ * Main entry point for the smart Indian meal suggestion feature.
+ * Handles API key verification and calls the Genkit flow.
+ */
 export async function smartIndianMealSuggestion(input: SmartIndianMealSuggestionInput): Promise<SmartIndianMealSuggestionOutput> {
+  const apiKey = process.env.GOOGLE_GENAI_API_KEY || process.env.GOOGLE_API_KEY;
+  
+  if (!apiKey) {
+    console.error("AI CONFIG ERROR: Missing GOOGLE_GENAI_API_KEY in environment variables.");
+    throw new Error("AI service is not configured. Please add GOOGLE_GENAI_API_KEY to your Vercel Project Settings.");
+  }
+
   try {
-    const apiKey = process.env.GOOGLE_GENAI_API_KEY || process.env.GOOGLE_API_KEY;
-    if (!apiKey || apiKey === 'YOUR_API_KEY_HERE') {
-      throw new Error("API Key is missing. Please add GOOGLE_GENAI_API_KEY to your Environment Variables.");
-    }
-    
-    return await smartIndianMealSuggestionFlow(input);
+    console.log("AI Flow Started:", { mealType: input.currentMealType, isVeg: input.isVegOnly });
+    const result = await smartIndianMealSuggestionFlow(input);
+    console.log("AI Flow Completed Successfully");
+    return result;
   } catch (error: any) {
     console.error("AI Flow Execution Error:", error);
-    const message = error.message || "Unknown error";
     
+    // Provide user-friendly errors for common failure modes
+    const message = error.message || "";
     if (message.includes('API_KEY_INVALID') || message.includes('403') || message.includes('401')) {
-      throw new Error("Invalid API Key. Please get a fresh key from https://aistudio.google.com/app/apikey");
+      throw new Error("Invalid API Key. Please update your GOOGLE_GENAI_API_KEY in Vercel settings.");
     }
     
     if (message.includes('quota') || message.includes('429')) {
       throw new Error("AI service quota exceeded. Please try again in a moment.");
     }
 
-    throw new Error(message || "The AI nutritionist encountered an issue.");
+    throw new Error(error.message || "The AI nutritionist encountered an issue generating your suggestions.");
   }
 }
 
@@ -112,6 +125,7 @@ const smartIndianMealSuggestionFlow = ai.defineFlow(
     outputSchema: SmartIndianMealSuggestionOutputSchema,
   },
   async (input) => {
+    // Calculate remaining targets precisely in TypeScript
     const remaining = {
       calories: Math.round(Math.max(0, input.dailyCalorieGoal - input.consumedCalories)),
       protein: Math.round(Math.max(0, input.dailyProteinGoal - input.consumedProtein)),
@@ -119,13 +133,14 @@ const smartIndianMealSuggestionFlow = ai.defineFlow(
       fats: Math.round(Math.max(0, input.dailyFatGoal - input.consumedFats)),
     };
 
+    // Execute the prompt with the model
     const result = await prompt({
       input,
       remaining,
     });
     
     if (!result || !result.output) {
-      throw new Error("AI failed to generate suggestions.");
+      throw new Error("AI failed to generate a valid response. Please try again.");
     }
 
     return result.output;

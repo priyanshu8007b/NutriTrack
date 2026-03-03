@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Sparkles, Loader2, Info, CheckCircle2, Utensils, Zap, Target } from "lucide-react"
+import { Sparkles, Loader2, Info, CheckCircle2, Utensils, Zap, Target, AlertCircle } from "lucide-react"
 import { smartIndianMealSuggestion, SmartIndianMealSuggestionOutput } from "@/ai/flows/smart-indian-meal-suggestion"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -19,6 +19,7 @@ import {
   useMemoFirebase 
 } from "@/firebase"
 import { collection, doc } from "firebase/firestore"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function SuggestionsPage() {
   const { user, isUserLoading } = useUser()
@@ -26,6 +27,7 @@ export default function SuggestionsPage() {
   const { toast } = useToast()
   
   const [loading, setLoading] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
   const [mealType, setMealType] = React.useState("Lunch")
   const [result, setResult] = React.useState<SmartIndianMealSuggestionOutput | null>(null)
   const [mounted, setMounted] = React.useState(false)
@@ -92,6 +94,7 @@ export default function SuggestionsPage() {
     }
 
     setResult(null) 
+    setError(null)
     setLoading(true)
     
     try {
@@ -113,11 +116,14 @@ export default function SuggestionsPage() {
         title: "Suggestions Ready",
         description: `Found fresh Indian options for your ${mealType}.`,
       })
-    } catch (error: any) {
+    } catch (err: any) {
+      console.error("Suggestion Error:", err)
+      const msg = err.message || "An unexpected error occurred."
+      setError(msg)
       toast({
         variant: "destructive",
         title: "Generation Failed",
-        description: error.message || "Please check your API key configuration.",
+        description: msg,
       })
     } finally {
       setLoading(false)
@@ -155,6 +161,14 @@ export default function SuggestionsPage() {
           </p>
         </div>
       </header>
+
+      {error && (
+        <Alert variant="destructive" className="rounded-2xl border-destructive/20 bg-destructive/5">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Suggestion Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         <div className="lg:col-span-4 space-y-6">
