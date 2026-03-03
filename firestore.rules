@@ -1,0 +1,124 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * PAUSHTIKPATH SECURITY RULES PHILOSOPHY
+     * 
+     * Core Philosophy: 
+     * This ruleset implements a strict path-based ownership model combined with role-based access 
+     * control (RBAC) via a dedicated admin collection. All user-specific data is isolated 
+     * within the user's own document tree.
+     * 
+     * Data Structure:
+     * - /userProfiles/{userId}: Root for user identity.
+     * - /userProfiles/{userId}/mealLogs/{mealLogId}: User-specific private meal history.
+     * - /userProfiles/{userId}/userGoal: User-specific nutritional targets (singleton).
+     * - /foodItems/{foodItemId}: Global public catalog of nutritional data.
+     * - /roles_admin/{uid}: Internal collection to designate administrative users.
+     * 
+     * Key Security Decisions:
+     * - Ownership: Access to /userProfiles and its subcollections is strictly limited to the 
+     *   authenticated user matching the {userId} wildcard.
+     * - Admin Privileges: Write access to the global /foodItems catalog requires the user's 
+     *   UID to exist in the /roles_admin collection.
+     * - Denormalization for Authorization: User IDs are stored within documents (e.g., mealLogs) 
+     *   to ensure that even if the path is compromised, the internal data must still align 
+     *   with the authenticated session.
+     * - Prototyping Flexibility: While authorization is strictly enforced, specific data 
+     *   field types (strings, numbers, etc.) are not validated to allow for rapid UI iteration.
+     */
+
+    // --- Global Helper Functions ---
+
+    /** Checks if the user is authenticated. */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /** Checks if the authenticated user's UID matches the provided userId. */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /** Checks ownership and ensures the document exists for state-changing operations. */
+    function isExistingOwner(userId) {
+      return resource != null && isOwner(userId);
+    }
+
+    /** Checks if the user is designated as an administrator in the DBAC collection. */
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+
+    // --- Collection Rules ---
+
+    /**
+     * @description Rules for user profile documents. Users manage their own identity.
+     * @path /userProfiles/{userId}
+     * @allow Authenticated user (create) where request.auth.uid == userId.
+     * @deny Any user attempting to read or write a profile that isn't their own.
+     * @principle Path-based ownership and relational integrity validation.
+     */
+    match /userProfiles/{userId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+
+      /**
+       * @description Rules for a user's private meal logs.
+       * @path /userProfiles/{userId}/mealLogs/{mealLogId}
+       * @allow Owner (list) their own logs for history views.
+       * @deny Unauthenticated access or cross-user data scraping.
+       * @principle Subcollection isolation.
+       */
+      match /mealLogs/{mealLogId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+        allow delete: if isExistingOwner(userId);
+      }
+
+      /**
+       * @description Rules for a user's nutritional goals (singleton).
+       * @path /userProfiles/{userId}/userGoal
+       * @allow Owner (update) to change their daily targets.
+       * @deny Public reading of personal health goals.
+       * @principle Singleton ownership.
+       */
+      match /userGoal {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+        allow delete: if isExistingOwner(userId);
+      }
+    }
+
+    /**
+     * @description Global master list of food items and their macros.
+     * @path /foodItems/{foodItemId}
+     * @allow Any user (get, list) to support searching and logging meals.
+     * @deny Non-admin users from modifying the master food database.
+     * @principle Public Read with Owner-Only (Admin) Writes.
+     */
+    match /foodItems/{foodItemId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description Administrative roles collection (DBAC).
+     * @path /roles_admin/{uid}
+     * @allow Authenticated users (get) to check their own admin status.
+     * @deny Direct client-side creation of admin roles.
+     * @principle Role-based access control.
+     */
+    match /roles_admin/{uid} {
+      allow get: if isSignedIn();
+      allow list: if isAdmin();
+      // Admins are typically provisioned via Admin SDK or Console for security
+      allow create, update, delete: if false; 
+    }
+  }
+}
