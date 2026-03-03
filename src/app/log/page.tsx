@@ -20,7 +20,8 @@ import {
   ChevronRight,
   ChevronLeft,
   X,
-  Zap
+  Zap,
+  ShoppingBag
 } from "lucide-react"
 import { INDIAN_FOOD_DATABASE, FoodItem } from "@/lib/mock-data"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
@@ -47,7 +48,7 @@ import {
   useMemoFirebase,
   addDocumentNonBlocking 
 } from "@/firebase"
-import { collection, doc, query, where, serverTimestamp } from "firebase/firestore"
+import { collection, doc } from "firebase/firestore"
 import { Progress } from "@/components/ui/progress"
 
 type MealCategory = "All" | "Breakfast" | "Lunch" | "Snacks" | "Dinner"
@@ -57,6 +58,7 @@ export default function LogMealPage() {
   const db = useFirestore()
   const { toast } = useToast()
 
+  const [mounted, setMounted] = React.useState(false)
   const [search, setSearch] = React.useState("")
   const [selectedCategory, setSelectedCategory] = React.useState<MealCategory>("All")
   const [selectedItems, setSelectedItems] = React.useState<{ food: FoodItem, quantity: number }[]>([])
@@ -65,6 +67,10 @@ export default function LogMealPage() {
   const [itemToPick, setItemToPick] = React.useState<FoodItem | null>(null)
   const [pickQuantity, setPickQuantity] = React.useState(1)
   const [isDailyDetailOpen, setIsDailyDetailOpen] = React.useState(false)
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // --- Real-time Data ---
   
@@ -79,10 +85,10 @@ export default function LogMealPage() {
     return collection(db, "userProfiles", user.uid, "mealLogs")
   }, [db, user?.uid])
   
-  const { data: allLogs, isLoading: isLogsLoading } = useCollection(mealLogsQuery)
+  const { data: allLogs } = useCollection(mealLogsQuery)
 
   const todayLogs = React.useMemo(() => {
-    if (!allLogs) return []
+    if (!allLogs || !mounted) return []
     const now = new Date()
     return allLogs.filter(log => {
       const logDate = new Date(log.loggedAt)
@@ -90,7 +96,7 @@ export default function LogMealPage() {
              logDate.getMonth() === now.getMonth() &&
              logDate.getFullYear() === now.getFullYear()
     })
-  }, [allLogs])
+  }, [allLogs, mounted])
 
   const todayTotals = React.useMemo(() => {
     return todayLogs.reduce((acc, log) => {
@@ -105,6 +111,17 @@ export default function LogMealPage() {
     }, { calories: 0, protein: 0, carbs: 0, fats: 0 })
   }, [todayLogs])
 
+  const currentPlateTotals = React.useMemo(() => {
+    return selectedItems.reduce((acc, item) => ({
+      calories: acc.calories + (item.food.calories * item.quantity),
+      protein: acc.protein + (item.food.protein * item.quantity),
+      carbs: acc.carbs + (item.food.carbs * item.quantity),
+      fats: acc.fats + (item.food.fats * item.quantity),
+    }), { calories: 0, protein: 0, carbs: 0, fats: 0 })
+  }, [selectedItems])
+
+  const totalCaloriesToday = todayTotals.calories + currentPlateTotals.calories
+  
   const calorieTarget = userGoal?.targetCalories || 2000
   const proteinTarget = userGoal ? Math.round(userGoal.targetCalories * userGoal.targetProteinRatio / 4) : 100
   const carbsTarget = userGoal ? Math.round(userGoal.targetCalories * userGoal.targetCarbsRatio / 4) : 250
@@ -145,7 +162,7 @@ export default function LogMealPage() {
     
     toast({
       title: "Added to Plate",
-      description: `${itemToPick.name} (${pickQuantity} servings) added.`,
+      description: `${itemToPick.name} (${pickQuantity} servings) added. Click 'Log This Meal' to finalize.`,
     })
     
     setItemToPick(null)
@@ -165,13 +182,6 @@ export default function LogMealPage() {
     }))
   }
 
-  const currentPlateTotals = selectedItems.reduce((acc, item) => ({
-    calories: acc.calories + (item.food.calories * item.quantity),
-    protein: acc.protein + (item.food.protein * item.quantity),
-    carbs: acc.carbs + (item.food.carbs * item.quantity),
-    fats: acc.fats + (item.food.fats * item.quantity),
-  }), { calories: 0, protein: 0, carbs: 0, fats: 0 })
-
   const handleSave = () => {
     if (!user) {
       toast({ variant: "destructive", title: "Authentication Required", description: "Please sign in to log meals." })
@@ -190,12 +200,14 @@ export default function LogMealPage() {
 
     toast({
       title: "Meal Logged",
-      description: `Successfully added ${selectedItems.length} items to your records.`,
+      description: `Successfully added ${selectedItems.length} items to your history.`,
     })
     setSelectedItems([])
   }
 
   const categories: MealCategory[] = ["All", "Breakfast", "Lunch", "Snacks", "Dinner"]
+
+  if (!mounted) return null
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 md:space-y-8 animate-in fade-in duration-500">
@@ -213,9 +225,9 @@ export default function LogMealPage() {
             <Target className="w-6 h-6 text-primary group-hover:text-white" />
           </div>
           <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Today's Intake</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Today's Total (Incl. Plate)</p>
             <p className="text-xl font-black">
-              {Math.round(todayTotals.calories)} <span className="text-xs text-muted-foreground">/ {calorieTarget} kcal</span>
+              {Math.round(totalCaloriesToday)} <span className="text-xs text-muted-foreground">/ {calorieTarget} kcal</span>
             </p>
           </div>
           <ChevronRight className="w-4 h-4 text-muted-foreground ml-2 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -445,21 +457,36 @@ export default function LogMealPage() {
         <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col p-0 rounded-[2.5rem]">
           <DialogHeader className="p-8 pb-4">
             <DialogTitle className="text-3xl font-black">Daily Nutrition Overview</DialogTitle>
-            <DialogDescription className="font-medium">Summary for {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}</DialogDescription>
+            <DialogDescription className="font-medium">
+              Status for {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
+            </DialogDescription>
           </DialogHeader>
           
           <ScrollArea className="flex-1 px-8 pb-8">
             <div className="space-y-8">
-              {/* Calories Large Progress */}
+              {/* Combined Progress */}
               <div className="space-y-4">
                 <div className="flex justify-between items-end">
-                  <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">Daily Calorie Progress</span>
-                  <span className="text-xl font-black">{Math.round(todayTotals.calories)} / {calorieTarget} <span className="text-xs font-bold text-muted-foreground">kcal</span></span>
+                  <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">Combined Progress (Logged + Plate)</span>
+                  <span className="text-xl font-black">{Math.round(totalCaloriesToday)} / {calorieTarget} <span className="text-xs font-bold text-muted-foreground">kcal</span></span>
                 </div>
-                <Progress value={(todayTotals.calories / calorieTarget) * 100} className="h-4 rounded-full" />
+                <div className="h-4 w-full bg-secondary rounded-full overflow-hidden flex">
+                  <div 
+                    className="bg-primary h-full transition-all duration-500" 
+                    style={{ width: `${Math.min((todayTotals.calories / calorieTarget) * 100, 100)}%` }}
+                  />
+                  <div 
+                    className="bg-accent h-full opacity-50 transition-all duration-500" 
+                    style={{ width: `${Math.min((currentPlateTotals.calories / calorieTarget) * 100, 100)}%` }}
+                  />
+                </div>
+                <div className="flex gap-4 text-[10px] font-black uppercase tracking-tighter text-muted-foreground">
+                  <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-primary" /> Logged ({Math.round(todayTotals.calories)} kcal)</span>
+                  <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-accent opacity-50" /> On Plate ({Math.round(currentPlateTotals.calories)} kcal)</span>
+                </div>
               </div>
 
-              {/* Macros Breakdown */}
+              {/* Macros Breakdown (Logged Only) */}
               <div className="grid grid-cols-3 gap-4">
                 <MacroDetailCard 
                   label="Protein" 
@@ -484,7 +511,25 @@ export default function LogMealPage() {
                 />
               </div>
 
-              {/* Meals List */}
+              {/* Current Plate Preview */}
+              {selectedItems.length > 0 && (
+                <div className="space-y-4 p-5 bg-accent/5 rounded-[2rem] border border-accent/10">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-accent flex items-center gap-2">
+                    <ShoppingBag className="w-4 h-4" />
+                    Currently On Plate (Not Logged Yet)
+                  </h3>
+                  <div className="space-y-2">
+                    {selectedItems.map((item) => (
+                      <div key={item.food.id} className="flex justify-between items-center text-sm">
+                        <span className="font-bold">{item.food.name} <span className="text-xs text-muted-foreground">({item.quantity} svg)</span></span>
+                        <span className="font-black text-accent">{Math.round(item.food.calories * item.quantity)} kcal</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* History List */}
               <div className="space-y-4">
                 <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                   <History className="w-4 h-4" />
@@ -495,7 +540,7 @@ export default function LogMealPage() {
                     {todayLogs.slice().reverse().map((log) => {
                       const food = INDIAN_FOOD_DATABASE.find(f => f.id.toString() === log.foodId)
                       return (
-                        <div key={log.id} className="flex items-center justify-between p-4 bg-secondary/10 rounded-2xl border border-border/50 animate-in slide-in-from-bottom-2 duration-300">
+                        <div key={log.id} className="flex items-center justify-between p-4 bg-secondary/10 rounded-2xl border border-border/50">
                           <div className="flex flex-col">
                             <span className="font-bold text-sm">{food?.name || "Unknown Dish"}</span>
                             <span className="text-[10px] text-muted-foreground font-black uppercase tracking-tighter">
@@ -512,7 +557,7 @@ export default function LogMealPage() {
                   </div>
                 ) : (
                   <div className="py-12 text-center text-muted-foreground">
-                    <p className="font-medium italic">No entries for today yet.</p>
+                    <p className="font-medium italic">No logged entries yet today.</p>
                   </div>
                 )}
               </div>

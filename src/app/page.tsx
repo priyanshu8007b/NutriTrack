@@ -63,7 +63,7 @@ export default function DashboardPage() {
   // --- Data Processing ---
 
   const todayTotals = React.useMemo(() => {
-    if (!allLogs) return { calories: 0, protein: 0, carbs: 0, fats: 0 }
+    if (!allLogs || !mounted) return { calories: 0, protein: 0, carbs: 0, fats: 0 }
     
     const now = new Date()
     const todayLogs = allLogs.filter(log => {
@@ -83,7 +83,7 @@ export default function DashboardPage() {
         fats: acc.fats + (food.fats * log.quantity),
       }
     }, { calories: 0, protein: 0, carbs: 0, fats: 0 })
-  }, [allLogs])
+  }, [allLogs, mounted])
 
   const calorieTarget = userGoal?.targetCalories || DEFAULT_GOALS.calories
   const proteinTarget = userGoal ? Math.round(userGoal.targetCalories * userGoal.targetProteinRatio / 4) : DEFAULT_GOALS.protein
@@ -378,7 +378,7 @@ function processWeeklyData(logs: any[]) {
 }
 
 function SummaryCard({ title, current, target, unit, icon: Icon, color }: any) {
-  const percentage = Math.min(Math.round((current / target) * 100), 100)
+  const percentage = target > 0 ? Math.min(Math.round((current / target) * 100), 100) : 0
   
   return (
     <Card className="shadow-sm border-border/50 hover:border-primary/50 transition-colors">
