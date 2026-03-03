@@ -35,7 +35,8 @@ export default function GoalsPage() {
     height: "",
     age: "",
     gender: "male",
-    activity: "1.2"
+    activity: "1.2",
+    goal: "maintenance"
   })
 
   // --- Firestore Sync ---
@@ -52,9 +53,9 @@ export default function GoalsPage() {
     if (remoteGoal) {
       setGoals({
         calories: remoteGoal.targetCalories,
-        protein: Math.round(remoteGoal.targetCalories * remoteGoal.targetProteinRatio / 4),
-        carbs: Math.round(remoteGoal.targetCalories * remoteGoal.targetCarbsRatio / 4),
-        fats: Math.round(remoteGoal.targetCalories * remoteGoal.targetFatsRatio / 9),
+        protein: Math.round(remoteGoal.targetCalories * (remoteGoal.targetProteinRatio || 0.2) / 4),
+        carbs: Math.round(remoteGoal.targetCalories * (remoteGoal.targetCarbsRatio || 0.5) / 4),
+        fats: Math.round(remoteGoal.targetCalories * (remoteGoal.targetFatsRatio || 0.3) / 9),
       })
       setHasCalculated(true)
     }
@@ -75,9 +76,9 @@ export default function GoalsPage() {
       id: "userGoal",
       userId: user.uid,
       targetCalories: goals.calories,
-      targetProteinRatio: (goals.protein * 4) / totalCaloriesFromMacros,
-      targetCarbsRatio: (goals.carbs * 4) / totalCaloriesFromMacros,
-      targetFatsRatio: (goals.fats * 9) / totalCaloriesFromMacros,
+      targetProteinRatio: totalCaloriesFromMacros > 0 ? (goals.protein * 4) / totalCaloriesFromMacros : 0.2,
+      targetCarbsRatio: totalCaloriesFromMacros > 0 ? (goals.carbs * 4) / totalCaloriesFromMacros : 0.5,
+      targetFatsRatio: totalCaloriesFromMacros > 0 ? (goals.fats * 9) / totalCaloriesFromMacros : 0.3,
       updatedAt: new Date().toISOString()
     }
 
@@ -98,7 +99,8 @@ export default function GoalsPage() {
       height: "",
       age: "",
       gender: "male",
-      activity: "1.2"
+      activity: "1.2",
+      goal: "maintenance"
     })
     toast({
       title: "Goals Reset",
@@ -129,13 +131,22 @@ export default function GoalsPage() {
       bmr = 447.593 + (9.247 * w) + (3.098 * h) - (4.330 * a)
     }
 
-    const tdee = Math.round(bmr * act)
+    let tdee = Math.round(bmr * act)
+    
+    // Apply Goal Offsets
+    if (metrics.goal === "loss") {
+      tdee = Math.max(1200, tdee - 400)
+    } else if (metrics.goal === "gain") {
+      tdee += 300
+    }
+
     setGoals(prev => ({ ...prev, calories: tdee }))
     setHasCalculated(true)
     
+    const goalLabel = metrics.goal === "loss" ? "Fat Loss" : metrics.goal === "gain" ? "Muscle Gain" : "Maintenance"
     toast({
       title: "Calculation Complete",
-      description: `Target set to ${tdee} kcal based on your metrics.`,
+      description: `Target set to ${tdee} kcal for ${goalLabel}.`,
     })
   }
 
@@ -228,20 +239,35 @@ export default function GoalsPage() {
               </div>
             </div>
 
-            <div className="space-y-3">
-              <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Activity Level</Label>
-              <Select value={metrics.activity} onValueChange={(val) => setMetrics(prev => ({ ...prev, activity: val }))}>
-                <SelectTrigger className="h-12 bg-secondary/10 border-none">
-                  <SelectValue placeholder="Select activity level" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1.2">Sedentary (No Exercise)</SelectItem>
-                  <SelectItem value="1.375">Light (1-2 days/week)</SelectItem>
-                  <SelectItem value="1.55">Moderate (3-5 days/week)</SelectItem>
-                  <SelectItem value="1.725">Active (6-7 days/week)</SelectItem>
-                  <SelectItem value="1.9">Extra Active (Hard physical job)</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Activity Level</Label>
+                <Select value={metrics.activity} onValueChange={(val) => setMetrics(prev => ({ ...prev, activity: val }))}>
+                  <SelectTrigger className="h-12 bg-secondary/10 border-none">
+                    <SelectValue placeholder="Select activity level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1.2">Sedentary (No Exercise)</SelectItem>
+                    <SelectItem value="1.375">Light (1-2 days/week)</SelectItem>
+                    <SelectItem value="1.55">Moderate (3-5 days/week)</SelectItem>
+                    <SelectItem value="1.725">Active (6-7 days/week)</SelectItem>
+                    <SelectItem value="1.9">Extra Active (Hard physical job)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-3">
+                <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Fitness Goal</Label>
+                <Select value={metrics.goal} onValueChange={(val) => setMetrics(prev => ({ ...prev, goal: val }))}>
+                  <SelectTrigger className="h-12 bg-secondary/10 border-none">
+                    <SelectValue placeholder="Select goal" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="loss">Fat Loss (-400 kcal)</SelectItem>
+                    <SelectItem value="maintenance">Maintenance (Balanced)</SelectItem>
+                    <SelectItem value="gain">Muscle Gain (+300 kcal)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <Button onClick={calculateCalories} className="w-full h-14 text-lg font-bold group">
@@ -268,7 +294,7 @@ export default function GoalsPage() {
                   <Slider 
                     value={[goals.calories]} 
                     min={1200} 
-                    max={4000} 
+                    max={4500} 
                     step={50}
                     onValueChange={([val]) => setGoals(prev => ({ ...prev, calories: val }))}
                   />
@@ -323,7 +349,7 @@ export default function GoalsPage() {
                   <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-foreground/60" /> {fatsPercent.toFixed(0)}% Fats</span>
                 </div>
 
-                {totalCaloriesFromMacros > goals.calories && (
+                {totalCaloriesFromMacros > goals.calories + 50 && (
                   <div className="p-3 bg-destructive/10 text-destructive text-[10px] font-bold uppercase tracking-tight rounded-lg flex items-center gap-2">
                     <Info className="w-3 h-3" />
                     Warning: Macro total exceeds calorie target.
@@ -355,7 +381,7 @@ function MacroInput({ label, value, onChange, color, desc }: any) {
       </div>
       <Slider 
         value={[value]} 
-        min={10} 
+        min={0} 
         max={400} 
         step={5}
         onValueChange={([val]) => onChange(val)}
