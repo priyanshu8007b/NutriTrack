@@ -13,6 +13,8 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { signOut } from "firebase/auth"
+import { useAuth, useUser } from "@/firebase"
 
 import {
   Sidebar,
@@ -39,6 +41,18 @@ const navigation = [
 
 export function AppSidebar() {
   const pathname = usePathname()
+  const auth = useAuth()
+  const { user } = useUser()
+
+  const handleLogout = () => {
+    signOut(auth).catch((error) => {
+      console.error("Logout failed", error)
+    })
+  }
+
+  const userInitial = user?.email?.[0]?.toUpperCase() || user?.displayName?.[0]?.toUpperCase() || "?"
+  const userName = user?.displayName || "Anonymous User"
+  const userEmail = user?.email || "No email provided"
 
   return (
     <Sidebar variant="inset" className="border-r border-border/50">
@@ -90,16 +104,19 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton className="w-full flex items-center gap-3 px-4 py-6 hover:bg-secondary/50 rounded-lg">
               <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">
-                AD
+                {userInitial}
               </div>
-              <div className="flex flex-col items-start overflow-hidden">
-                <span className="text-sm font-semibold truncate">Ananya Deshpande</span>
-                <span className="text-xs text-muted-foreground truncate">ananya@example.com</span>
+              <div className="flex flex-col items-start overflow-hidden text-left">
+                <span className="text-sm font-semibold truncate w-full">{userName}</span>
+                <span className="text-xs text-muted-foreground truncate w-full">{userEmail}</span>
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 px-4 py-4 rounded-lg mt-2 transition-colors">
+            <SidebarMenuButton 
+              onClick={handleLogout}
+              className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 px-4 py-4 rounded-lg mt-2 transition-colors"
+            >
               <LogOut className="w-4 h-4 mr-2" />
               <span className="text-sm font-medium">Log out</span>
             </SidebarMenuButton>

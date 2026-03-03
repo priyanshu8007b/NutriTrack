@@ -1,7 +1,9 @@
-import type {Metadata} from 'next';
+import type { Metadata } from 'next';
 import './globals.css';
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import { FirebaseClientProvider } from "@/firebase";
+import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
   title: 'PaushtikPath - Indian Nutrition Tracker',
@@ -21,14 +23,17 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
-        <SidebarProvider>
-          <AppSidebar />
-          <SidebarInset>
-            <main className="min-h-screen">
-              {children}
-            </main>
-          </SidebarInset>
-        </SidebarProvider>
+        <FirebaseClientProvider>
+          <SidebarProvider>
+            <AppSidebar />
+            <SidebarInset>
+              <main className="min-h-screen">
+                {children}
+              </main>
+            </SidebarInset>
+          </SidebarProvider>
+          <Toaster />
+        </FirebaseClientProvider>
       </body>
     </html>
   );
