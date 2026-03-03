@@ -29,7 +29,7 @@ export default function GoalsPage() {
   const [goals, setGoals] = React.useState(DEFAULT_GOALS)
   const [hasCalculated, setHasCalculated] = React.useState(false)
 
-  // Calculator State - Initialized to blank strings for user metrics
+  // Calculator State - Strictly blank strings by default
   const [metrics, setMetrics] = React.useState({
     weight: "",
     height: "",
