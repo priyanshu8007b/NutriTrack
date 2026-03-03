@@ -53,36 +53,38 @@ export async function smartIndianMealSuggestion(input: SmartIndianMealSuggestion
 
 const prompt = ai.definePrompt({
   name: 'smartIndianMealSuggestionPrompt',
-  input: {schema: SmartIndianMealSuggestionInputSchema},
+  input: {schema: z.object({
+    input: SmartIndianMealSuggestionInputSchema,
+    remaining: z.object({
+      calories: z.number(),
+      protein: z.number(),
+      carbs: z.number(),
+      fats: z.number(),
+    })
+  })},
   output: {schema: SmartIndianMealSuggestionOutputSchema},
   prompt: `You are an expert Indian nutritionist and chef. Your task is to analyze a user's daily nutritional goals and their consumed macros, then suggest culturally relevant Indian dishes or meal combinations to help them meet their remaining macro targets for the day.
 
 DIETARY PREFERENCE:
-{{#if isVegOnly}}
+{{#if input.isVegOnly}}
 - The user is VEGETARIAN. DO NOT suggest any meat, fish, or eggs. Suggest only pure vegetarian (veg) Indian dishes.
 {{else}}
 - The user has no specific dietary restrictions. You can suggest both veg and non-veg Indian dishes.
 {{/if}}
 
-CALCULATION TASK:
-1. Calculate remaining macros: (Goal - Consumed).
-2. If any remaining macro is negative (meaning the user has exceeded their goal), suggest very light, low-calorie Indian options like salads (Kachumber), buttermilk (Chaas), or clear soups that still provide some protein if needed.
-3. Suggest 1-2 authentic Indian dishes or combinations appropriate for the current meal type: {{{currentMealType}}}.
+CURRENT MEAL CONTEXT:
+- Meal Type: {{{input.currentMealType}}}
+- Remaining Target: 
+  - Calories: {{{remaining.calories}}} kcal
+  - Protein: {{{remaining.protein}}}g
+  - Carbs: {{{remaining.carbs}}}g
+  - Fats: {{{remaining.fats}}}g
 
-USER DATA:
-Daily Goals:
-- Calories: {{{dailyCalorieGoal}}}
-- Protein: {{{dailyProteinGoal}}}g
-- Carbs: {{{dailyCarbGoal}}}g
-- Fats: {{{dailyFatGoal}}}g
-
-Consumed So Far:
-- Calories: {{{consumedCalories}}}
-- Protein: {{{consumedProtein}}}g
-- Carbs: {{{consumedCarbs}}}g
-- Fats: {{{consumedFats}}}g
-
-Ensure the 'remainingMacros' in the output accurately reflects (Goal - Consumed). Provide authentic dish names (e.g., 'Paneer Bhurji with Roti', 'Moong Dal Khichdi').`,
+INSTRUCTIONS:
+1. Suggest 2-3 authentic Indian dishes or combinations (like "Paneer Bhurji with 2 Rotis" or "Moong Dal Khichdi with Curd").
+2. If the user has already exceeded their calories (negative remaining calories), suggest extremely light options like "Kachumber Salad", "Spiced Chaas (Buttermilk)", or "Lemon Water with Chia Seeds".
+3. Ensure the estimated macros for each suggestion are realistic.
+4. Provide the exact 'remainingMacros' object passed in the context.`,
 });
 
 const smartIndianMealSuggestionFlow = ai.defineFlow(
@@ -92,7 +94,27 @@ const smartIndianMealSuggestionFlow = ai.defineFlow(
     outputSchema: SmartIndianMealSuggestionOutputSchema,
   },
   async (input) => {
-    const {output} = await prompt(input);
-    return output!;
+    // Perform accurate calculation in TypeScript before hitting the LLM
+    const remaining = {
+      calories: Math.max(0, input.dailyCalorieGoal - input.consumedCalories),
+      protein: Math.max(0, input.dailyProteinGoal - input.consumedProtein),
+      carbs: Math.max(0, input.dailyCarbGoal - input.consumedCarbs),
+      fats: Math.max(0, input.dailyFatGoal - input.consumedFats),
+    };
+
+    const {output} = await prompt({
+      input,
+      remaining,
+    });
+    
+    // Safety check to ensure LLM returns valid output
+    if (!output) {
+      throw new Error("Failed to generate meal suggestions. Please try again.");
+    }
+
+    return {
+      remainingMacros: remaining,
+      mealSuggestions: output.mealSuggestions || [],
+    };
   }
 );

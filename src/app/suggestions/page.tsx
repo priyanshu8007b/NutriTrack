@@ -10,6 +10,7 @@ import { Progress } from "@/components/ui/progress"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DEFAULT_GOALS, INDIAN_FOOD_DATABASE } from "@/lib/mock-data"
 import { cn } from "@/lib/utils"
+import { useToast } from "@/hooks/use-toast"
 import { 
   useUser, 
   useFirestore, 
@@ -22,6 +23,7 @@ import { collection, doc } from "firebase/firestore"
 export default function SuggestionsPage() {
   const { user } = useUser()
   const db = useFirestore()
+  const { toast } = useToast()
   
   const [loading, setLoading] = React.useState(false)
   const [mealType, setMealType] = React.useState("Lunch")
@@ -75,29 +77,43 @@ export default function SuggestionsPage() {
   }, [allLogs, mounted])
 
   const calorieTarget = userGoal?.targetCalories || DEFAULT_GOALS.calories
-  const proteinTarget = userGoal ? Math.round(userGoal.targetCalories * userGoal.targetProteinRatio / 4) : DEFAULT_GOALS.protein
-  const carbsTarget = userGoal ? Math.round(userGoal.targetCalories * userGoal.targetCarbsRatio / 4) : DEFAULT_GOALS.carbs
-  const fatsTarget = userGoal ? Math.round(userGoal.targetCalories * userGoal.targetFatsRatio / 9) : DEFAULT_GOALS.fats
+  const proteinTarget = userGoal ? Math.round(userGoal.targetCalories * (userGoal.targetProteinRatio || 0.2) / 4) : DEFAULT_GOALS.protein
+  const carbsTarget = userGoal ? Math.round(userGoal.targetCalories * (userGoal.targetCarbsRatio || 0.5) / 4) : DEFAULT_GOALS.carbs
+  const fatsTarget = userGoal ? Math.round(userGoal.targetCalories * (userGoal.targetFatsRatio || 0.3) / 9) : DEFAULT_GOALS.fats
 
   const handleSuggest = async () => {
-    if (!user) return
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Sign in required",
+        description: "Please sign in to get personalized meal suggestions.",
+      })
+      return
+    }
+
     setLoading(true)
+    setResult(null)
+    
     try {
       const output = await smartIndianMealSuggestion({
         dailyCalorieGoal: calorieTarget,
         dailyProteinGoal: proteinTarget,
         dailyCarbGoal: carbsTarget,
         dailyFatGoal: fatsTarget,
-        consumedCalories: todayTotals.calories,
-        consumedProtein: todayTotals.protein,
-        consumedCarbs: todayTotals.carbs,
-        consumedFats: todayTotals.fats,
+        consumedCalories: todayTotals.calories || 0,
+        consumedProtein: todayTotals.protein || 0,
+        consumedCarbs: todayTotals.carbs || 0,
+        consumedFats: todayTotals.fats || 0,
         isVegOnly: userProfile?.isVegOnly || false,
         currentMealType: mealType
       })
       setResult(output)
-    } catch (error) {
-      console.error("Suggestion Error:", error)
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Suggestion failed",
+        description: error.message || "Something went wrong while generating suggestions.",
+      })
     } finally {
       setLoading(false)
     }
@@ -157,7 +173,7 @@ export default function SuggestionsPage() {
               <Button 
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-black h-14 shadow-lg shadow-primary/30 group relative overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98]"
                 onClick={handleSuggest}
-                disabled={loading || !user}
+                disabled={loading}
               >
                 <div className="relative flex items-center justify-center gap-2">
                   {loading ? (
