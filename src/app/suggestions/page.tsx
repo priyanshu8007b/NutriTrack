@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { DEFAULT_GOALS, INDIAN_FOOD_DATABASE } from "@/lib/mock-data"
+import { DEFAULT_GOALS, FOOD_BY_ID } from "@/lib/mock-data"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
 import { 
@@ -21,7 +21,7 @@ import {
 import { collection, doc } from "firebase/firestore"
 
 export default function SuggestionsPage() {
-  const { user } = useUser()
+  const { user, isUserLoading } = useUser()
   const db = useFirestore()
   const { toast } = useToast()
   
@@ -65,7 +65,7 @@ export default function SuggestionsPage() {
     })
 
     return todayLogs.reduce((acc, log) => {
-      const food = INDIAN_FOOD_DATABASE.find(f => f.id.toString() === log.foodId)
+      const food = FOOD_BY_ID.get(log.foodId)
       if (!food) return acc
       return {
         calories: acc.calories + (food.calories * log.quantity),
@@ -112,14 +112,20 @@ export default function SuggestionsPage() {
       toast({
         variant: "destructive",
         title: "Suggestion failed",
-        description: error.message || "Something went wrong while generating suggestions.",
+        description: error.message || "Something went wrong while generating suggestions. Make sure you have set your goals and logged some meals today.",
       })
     } finally {
       setLoading(false)
     }
   }
 
-  if (!mounted) return null
+  if (!mounted || isUserLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    )
+  }
 
   return (
     <div className="p-6 md:p-8 max-w-6xl mx-auto space-y-10 animate-in fade-in duration-500">
