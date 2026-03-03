@@ -30,6 +30,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { 
@@ -46,7 +48,8 @@ import {
   useCollection, 
   useDoc, 
   useMemoFirebase,
-  addDocumentNonBlocking 
+  addDocumentNonBlocking,
+  setDocumentNonBlocking
 } from "@/firebase"
 import { collection, doc } from "firebase/firestore"
 import { Progress } from "@/components/ui/progress"
@@ -74,6 +77,12 @@ export default function LogMealPage() {
 
   // --- Real-time Data ---
   
+  const userProfileRef = useMemoFirebase(() => {
+    if (!db || !user?.uid) return null
+    return doc(db, "userProfiles", user.uid)
+  }, [db, user?.uid])
+  const { data: userProfile } = useDoc(userProfileRef)
+
   const userGoalRef = useMemoFirebase(() => {
     if (!db || !user?.uid) return null
     return doc(db, "userProfiles", user.uid, "userGoal", "userGoal")
@@ -129,6 +138,12 @@ export default function LogMealPage() {
 
   // --- Helpers ---
 
+  const handleVegToggle = (checked: boolean) => {
+    if (!db || !user?.uid) return
+    const ref = doc(db, "userProfiles", user.uid)
+    setDocumentNonBlocking(ref, { isVegOnly: checked }, { merge: true })
+  }
+
   const formatServing = (serving: string) => {
     if (serving.toLowerCase().includes("bowl") && !serving.includes("(")) {
       return serving.replace(/bowl/i, "bowl (250g)")
@@ -138,11 +153,15 @@ export default function LogMealPage() {
 
   const filteredFoods = INDIAN_FOOD_DATABASE.filter(food => {
     const matchesSearch = food.name.toLowerCase().includes(search.toLowerCase())
-    if (selectedCategory === "All") return matchesSearch
-    if (selectedCategory === "Breakfast") return matchesSearch && (food.category === "Breakfast" || food.category === "Bread")
-    if (selectedCategory === "Snacks") return matchesSearch && (food.category === "Snack" || food.category === "Beverage")
+    const matchesVeg = userProfile?.isVegOnly ? food.isVeg : true
+    
+    if (!matchesVeg || !matchesSearch) return false
+
+    if (selectedCategory === "All") return true
+    if (selectedCategory === "Breakfast") return food.category === "Breakfast" || food.category === "Bread"
+    if (selectedCategory === "Snacks") return food.category === "Snack" || food.category === "Beverage"
     const isMainMeal = ["Main Course", "Lentils", "Rice", "Bread", "Side Dish"].includes(food.category)
-    return matchesSearch && isMainMeal
+    return isMainMeal
   }).slice(0, 50) 
 
   const handleStartPick = (food: FoodItem) => {
@@ -217,21 +236,35 @@ export default function LogMealPage() {
           <p className="text-muted-foreground text-sm md:text-lg">Track regional authenticity and nutritional balance.</p>
         </div>
 
-        <button 
-          onClick={() => setIsDailyDetailOpen(true)}
-          className="group text-left bg-card border border-border/50 rounded-2xl p-4 flex items-center gap-4 shadow-sm hover:border-primary/50 transition-all active:scale-[0.98]"
-        >
-          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-            <Target className="w-6 h-6 text-primary group-hover:text-white" />
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-3 bg-card border border-border/50 rounded-2xl p-4 shadow-sm">
+            <div className="flex items-center gap-2">
+              <Leaf className={cn("w-4 h-4 transition-colors", userProfile?.isVegOnly ? "text-green-600" : "text-muted-foreground")} />
+              <Label htmlFor="veg-mode-log" className="text-[10px] font-black uppercase tracking-widest cursor-pointer">Veg Only</Label>
+            </div>
+            <Switch 
+              id="veg-mode-log" 
+              checked={userProfile?.isVegOnly || false} 
+              onCheckedChange={handleVegToggle}
+            />
           </div>
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Today's Total (Incl. Plate)</p>
-            <p className="text-xl font-black">
-              {Math.round(totalCaloriesToday)} <span className="text-xs text-muted-foreground">/ {calorieTarget} kcal</span>
-            </p>
-          </div>
-          <ChevronRight className="w-4 h-4 text-muted-foreground ml-2 opacity-0 group-hover:opacity-100 transition-opacity" />
-        </button>
+
+          <button 
+            onClick={() => setIsDailyDetailOpen(true)}
+            className="group text-left bg-card border border-border/50 rounded-2xl p-4 flex items-center gap-4 shadow-sm hover:border-primary/50 transition-all active:scale-[0.98]"
+          >
+            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+              <Target className="w-6 h-6 text-primary group-hover:text-white" />
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Today's Total (Incl. Plate)</p>
+              <p className="text-xl font-black">
+                {Math.round(totalCaloriesToday)} <span className="text-xs text-muted-foreground">/ {calorieTarget} kcal</span>
+              </p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-muted-foreground ml-2 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </button>
+        </div>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 items-start">
@@ -297,6 +330,11 @@ export default function LogMealPage() {
                       </Button>
                     </div>
                   ))}
+                  {filteredFoods.length === 0 && (
+                    <div className="p-12 text-center text-muted-foreground">
+                      <p className="font-medium italic">No items found matching your filters.</p>
+                    </div>
+                  )}
                 </div>
               </ScrollArea>
             </CardContent>

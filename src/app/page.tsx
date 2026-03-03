@@ -12,7 +12,8 @@ import {
   ArrowRight,
   Sparkles,
   Utensils,
-  LogIn
+  LogIn,
+  Leaf
 } from "lucide-react"
 import Link from "next/link"
 import { 
@@ -32,9 +33,18 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 import { DEFAULT_GOALS, INDIAN_FOOD_DATABASE } from "@/lib/mock-data"
 import { cn } from "@/lib/utils"
-import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from "@/firebase"
+import { 
+  useUser, 
+  useFirestore, 
+  useCollection, 
+  useDoc, 
+  useMemoFirebase,
+  setDocumentNonBlocking
+} from "@/firebase"
 import { collection, doc } from "firebase/firestore"
 
 export default function DashboardPage() {
@@ -48,6 +58,12 @@ export default function DashboardPage() {
 
   // --- Real-time Data Fetching ---
 
+  const userProfileRef = useMemoFirebase(() => {
+    if (!db || !user?.uid) return null
+    return doc(db, "userProfiles", user.uid)
+  }, [db, user?.uid])
+  const { data: userProfile } = useDoc(userProfileRef)
+
   const userGoalRef = useMemoFirebase(() => {
     if (!db || !user?.uid) return null
     return doc(db, "userProfiles", user.uid, "userGoal", "userGoal")
@@ -59,6 +75,14 @@ export default function DashboardPage() {
     return collection(db, "userProfiles", user.uid, "mealLogs")
   }, [db, user?.uid])
   const { data: allLogs } = useCollection(mealLogsQuery)
+
+  // --- Actions ---
+
+  const handleVegToggle = (checked: boolean) => {
+    if (!db || !user?.uid) return
+    const ref = doc(db, "userProfiles", user.uid)
+    setDocumentNonBlocking(ref, { isVegOnly: checked }, { merge: true })
+  }
 
   // --- Data Processing ---
 
@@ -129,23 +153,38 @@ export default function DashboardPage() {
 
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-700">
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="space-y-1">
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
             {user?.displayName ? `Namaste, ${user.displayName.split(' ')[0]}!` : "Namaste!"}
           </h1>
-          <p className="text-muted-foreground mt-1">Here's your nutritional overview for today.</p>
+          <p className="text-muted-foreground">Here's your nutritional overview for today.</p>
         </div>
-        <div className="flex items-center gap-3">
-          <Button asChild variant="outline" className="border-border/50 text-foreground hover:bg-primary/5">
-            <Link href="/database">Browse Foods</Link>
-          </Button>
-          <Button asChild className="bg-primary hover:bg-primary/90 font-bold">
-            <Link href="/log">
-              <Plus className="w-4 h-4 mr-2" />
-              Log Meal
-            </Link>
-          </Button>
+        
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-3 bg-secondary/30 px-4 py-2 rounded-full border border-border/50">
+            <div className="flex items-center gap-2">
+              <Leaf className={cn("w-4 h-4 transition-colors", userProfile?.isVegOnly ? "text-green-600" : "text-muted-foreground")} />
+              <Label htmlFor="veg-mode" className="text-xs font-black uppercase tracking-widest cursor-pointer">Veg Only</Label>
+            </div>
+            <Switch 
+              id="veg-mode" 
+              checked={userProfile?.isVegOnly || false} 
+              onCheckedChange={handleVegToggle}
+            />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Button asChild variant="outline" className="border-border/50 text-foreground hover:bg-primary/5">
+              <Link href="/database">Browse Foods</Link>
+            </Button>
+            <Button asChild className="bg-primary hover:bg-primary/90 font-bold">
+              <Link href="/log">
+                <Plus className="w-4 h-4 mr-2" />
+                Log Meal
+              </Link>
+            </Button>
+          </div>
         </div>
       </header>
 

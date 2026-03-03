@@ -5,7 +5,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "UserProfile",
       "type": "object",
-      "description": "Represents a user's profile information within the PaushtikPath application. This entity stores basic user details, assuming authentication is handled by an external system.",
+      "description": "Represents a user's profile information within the PaushtikPath application.",
       "properties": {
         "id": {
           "type": "string",
@@ -15,6 +15,11 @@
           "type": "string",
           "description": "The user's unique email address.",
           "format": "email"
+        },
+        "isVegOnly": {
+          "type": "boolean",
+          "description": "User's dietary preference for vegetarian-only food items.",
+          "default": false
         },
         "createdAt": {
           "type": "string",
@@ -32,7 +37,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "FoodItem",
       "type": "object",
-      "description": "Represents a specific food item with its nutritional breakdown. This entity forms the basis for calculating meal macros.",
+      "description": "Represents a specific food item with its nutritional breakdown.",
       "properties": {
         "id": {
           "type": "string",
@@ -40,23 +45,23 @@
         },
         "name": {
           "type": "string",
-          "description": "The common name of the food item, e.g., 'Dal Makhani' or 'Chapati'."
+          "description": "The common name of the food item."
         },
         "calories": {
           "type": "number",
-          "description": "Total calorie content per standard serving (e.g., 100g or 1 unit) of the food item."
+          "description": "Total calorie content per standard serving."
         },
         "protein": {
           "type": "number",
-          "description": "Protein content in grams per standard serving of the food item."
+          "description": "Protein content in grams."
         },
         "carbs": {
           "type": "number",
-          "description": "Carbohydrate content in grams per standard serving of the food item."
+          "description": "Carbohydrate content in grams."
         },
         "fats": {
           "type": "number",
-          "description": "Fat content in grams per standard serving of the food item."
+          "description": "Fat content in grams."
         }
       },
       "required": [
@@ -72,7 +77,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "MealLog",
       "type": "object",
-      "description": "Represents a single instance of a user logging a specific food item with a given quantity at a particular time.",
+      "description": "Represents a single instance of a user logging a specific food item.",
       "properties": {
         "id": {
           "type": "string",
@@ -80,15 +85,15 @@
         },
         "userId": {
           "type": "string",
-          "description": "Reference to the UserProfile who logged this meal. (Relationship: UserProfile 1:N MealLog)"
+          "description": "Reference to the UserProfile who logged this meal."
         },
         "foodId": {
           "type": "string",
-          "description": "Reference to the FoodItem that was consumed. (Relationship: FoodItem 1:N MealLog)"
+          "description": "Reference to the FoodItem that was consumed."
         },
         "quantity": {
           "type": "number",
-          "description": "The quantity of the food item consumed (e.g., in grams, units, or servings)."
+          "description": "The quantity of the food item consumed."
         },
         "loggedAt": {
           "type": "string",
@@ -108,7 +113,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "UserGoal",
       "type": "object",
-      "description": "Represents the personalized daily nutritional goals set by a user, including calorie targets and macro distribution ratios.",
+      "description": "Represents the personalized daily nutritional goals set by a user.",
       "properties": {
         "id": {
           "type": "string",
@@ -116,7 +121,7 @@
         },
         "userId": {
           "type": "string",
-          "description": "Reference to the UserProfile to whom these goals belong. (Relationship: UserProfile 1:1 UserGoal)"
+          "description": "Reference to the UserProfile to whom these goals belong."
         },
         "targetCalories": {
           "type": "number",
@@ -124,15 +129,15 @@
         },
         "targetProteinRatio": {
           "type": "number",
-          "description": "The target percentage (as a decimal, e.g., 0.3 for 30%) of daily calories to come from protein."
+          "description": "The target percentage of daily calories to come from protein."
         },
         "targetCarbsRatio": {
           "type": "number",
-          "description": "The target percentage (as a decimal) of daily calories to come from carbohydrates."
+          "description": "The target percentage of daily calories to come from carbohydrates."
         },
         "targetFatsRatio": {
           "type": "number",
-          "description": "The target percentage (as a decimal) of daily calories to come from fats."
+          "description": "The target percentage of daily calories to come from fats."
         },
         "updatedAt": {
           "type": "string",
@@ -167,11 +172,11 @@
           "schema": {
             "$ref": "#/backend/entities/UserProfile"
           },
-          "description": "Stores a user's basic profile information. Access is restricted to the authenticated user whose ID matches '{userId}' in the path. This is the root for all user-specific data.",
+          "description": "Stores a user's basic profile information and dietary preferences.",
           "params": [
             {
               "name": "userId",
-              "description": "The unique identifier of the user (from request.auth.uid)."
+              "description": "The unique identifier of the user."
             }
           ]
         }
@@ -183,7 +188,7 @@
           "schema": {
             "$ref": "#/backend/entities/FoodItem"
           },
-          "description": "A master collection of generic Indian food items and their nutritional breakdowns. Documents are publicly readable by all users, supporting QAP-compliant list queries. Write access would typically be restricted to administrators or trusted backend services.",
+          "description": "A master collection of generic Indian food items.",
           "params": [
             {
               "name": "foodItemId",
@@ -199,7 +204,7 @@
           "schema": {
             "$ref": "#/backend/entities/MealLog"
           },
-          "description": "Stores individual meal log entries, private to the user specified by '{userId}'. Includes the denormalized 'userId' field within the document, which must match the path parameter for robust authorization independence and simple security rules. Supports QAP-compliant list queries for the owning user.",
+          "description": "Stores individual meal log entries.",
           "params": [
             {
               "name": "userId",
@@ -213,13 +218,13 @@
         }
       },
       {
-        "path": "/userProfiles/{userId}/userGoal",
+        "path": "/userProfiles/{userId}/userGoal/userGoal",
         "definition": {
           "entityName": "UserGoal",
           "schema": {
             "$ref": "#/backend/entities/UserGoal"
           },
-          "description": "Stores a user's personalized daily nutritional goals as a singleton document (with document ID 'userGoal') within their profile. This ensures private access to the user specified by '{userId}' and includes the denormalized 'userId' within the document, matching the path parameter for robust authorization independence and simple security rules.",
+          "description": "Stores a user's personalized daily nutritional goals as a singleton document.",
           "params": [
             {
               "name": "userId",
@@ -227,24 +232,7 @@
             }
           ]
         }
-      },
-      {
-        "path": "/roles_admin/{uid}",
-        "definition": {
-          "entityName": "AdminRole",
-          "schema": {
-            "$ref": "#/backend/entities/UserProfile"
-          },
-          "description": "A collection used for Database Access Control (DBAC) to designate administrators. The existence of a document at `/roles_admin/$(request.auth.uid)` grants administrative privileges (e.g., to manage global food items).",
-          "params": [
-            {
-              "name": "uid",
-              "description": "The unique identifier of a user who is designated as an administrator."
-            }
-          ]
-        }
       }
-    ],
-    "reasoning": "The recommended Firestore structure is designed to be secure, scalable, and debuggable by strictly adhering to the core design principles. \n\n**1. Authorization Independence via Denormalization:**\n*   For `MealLog` and `UserGoal` entities, which are intrinsically tied to a specific user, the `userId` is explicitly stored within each document. When these documents are placed in subcollections like `/userProfiles/{userId}/mealLogs/{mealLogId}` and `/userProfiles/{userId}/userGoal`, the `userId` in the document content *must* match the `{userId}` wildcard in the path. This denormalization eliminates the need for `get()` operations in security rules to check parent documents, thus ensuring authorization independence and enabling atomic batch/transactional writes.\n\n**2. Structural Segregation for QAPs (Queryable Authorization Paths):**\n*   **Public Data:** The `/foodItems` collection serves as a global, publicly readable catalog of food items. Its homogeneous security posture (all documents are public read, with admin-only write) means that `list` queries on this collection are inherently secure (QAP compliant) without needing complex filtering rules.\n*   **Private User Data:** All user-specific data (`UserProfile`, `MealLog`, `UserGoal`) is strictly segregated under `/userProfiles/{userId}/...` paths. This path-based ownership ensures that a user can only query or modify their own data. For example, a `list` operation on `/userProfiles/$(request.auth.uid)/mealLogs` will securely return only the authenticated user's meal logs, fully satisfying QAPs.\n\n**3. Consistent Access Modeling:**\n*   **Path-Based Ownership:** This is the primary model for user-owned data. By embedding the `userId` directly into the document path (`/userProfiles/{userId}`), authorization rules become simple and explicit (e.g., `allow read, write: if request.auth.uid == userId`).\n*   **Hierarchical Paths:** User-specific subcollections like `/userProfiles/{userId}/mealLogs` and `/userProfiles/{userId}/userGoal` continue the ownership hierarchy, making it clear that these resources belong to the parent user.\n*   **DBAC for Global Roles:** An explicit `/roles_admin/{uid}` collection is included for Database Access Control. This allows for simple, boolean checks (e.g., `exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid))`) for privileged operations like creating/updating `FoodItem` entries, adhering to the principle of storing roles in the database rather than relying on custom claims.\n\n**4. Data Clarity and Predictability:**\n*   Semantic collection names (`userProfiles`, `foodItems`, `mealLogs`, `userGoal`, `roles_admin`) and descriptive wildcards (`{userId}`, `{foodItemId}`, `{mealLogId}`, `{uid}`) ensure that the purpose and ownership of each document are immediately clear, simplifying rule writing and debugging. The `userGoal` document is designed as a singleton under the user's path, clearly representing the 1:1 relationship with the user."
+    ]
   }
 }
