@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Search, Plus, Trash2, Clock, Calculator, Info } from "lucide-react"
+import { Search, Plus, Trash2, Clock, Calculator, Info, UtensilsCrossed } from "lucide-react"
 import { INDIAN_FOOD_DATABASE, FoodItem } from "@/lib/mock-data"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
