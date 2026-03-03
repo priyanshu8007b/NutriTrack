@@ -1,8 +1,7 @@
-
 "use client"
 
 import * as React from "react"
-import { UtensilsCrossed, ArrowRight, Sparkles, ShieldCheck } from "lucide-react"
+import { UtensilsCrossed, ArrowRight, Sparkles, ShieldCheck, Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useAuth, useUser, initiateAnonymousSignIn, initiateGoogleSignIn } from "@/firebase"
 import { Button } from "@/components/ui/button"
@@ -12,6 +11,7 @@ export default function LoginPage() {
   const { user, isUserLoading } = useUser()
   const auth = useAuth()
   const router = useRouter()
+  const [isGoogleLoading, setIsGoogleLoading] = React.useState(false)
 
   React.useEffect(() => {
     if (user && !isUserLoading) {
@@ -24,8 +24,10 @@ export default function LoginPage() {
   }
 
   const handleGoogleSignIn = () => {
-    initiateGoogleSignIn(auth)
+    initiateGoogleSignIn(auth, setIsGoogleLoading)
   }
+
+  const isLoading = isUserLoading || isGoogleLoading
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-6">
@@ -51,10 +53,14 @@ export default function LoginPage() {
             <Button 
               className="w-full h-12 text-md font-bold bg-white text-foreground border border-border/50 hover:bg-secondary/20 shadow-sm flex items-center justify-center gap-3"
               onClick={handleGoogleSignIn}
-              disabled={isUserLoading}
+              disabled={isLoading}
             >
-              <svg className="h-5 w-5" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path></svg>
-              Continue with Google
+              {isGoogleLoading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <svg className="h-5 w-5" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path></svg>
+              )}
+              {isGoogleLoading ? "Connecting..." : "Continue with Google"}
             </Button>
 
             <div className="relative">
@@ -69,7 +75,7 @@ export default function LoginPage() {
             <Button 
               className="w-full h-12 text-md font-bold bg-primary hover:bg-primary/90 shadow-lg shadow-primary/10 group"
               onClick={handleQuickSignIn}
-              disabled={isUserLoading}
+              disabled={isLoading}
             >
               <Sparkles className="mr-2 w-5 h-5 group-hover:rotate-12 transition-transform" />
               Quick Start (Guest)

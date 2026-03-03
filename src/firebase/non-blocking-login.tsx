@@ -1,4 +1,3 @@
-
 'use client';
 import {
   Auth,
@@ -13,7 +12,7 @@ import {
 export function initiateAnonymousSignIn(authInstance: Auth): void {
   signInAnonymously(authInstance).catch((error) => {
     if (error.code === 'auth/operation-not-allowed') {
-      alert("Anonymous authentication is not enabled in the Firebase Console. Please enable it to proceed.");
+      alert("Anonymous authentication is not enabled in the Firebase Console. \n\nGo to Authentication > Sign-in method and enable Anonymous.");
     } else {
       console.error("Anonymous Sign-In Error:", error);
     }
@@ -35,13 +34,28 @@ export function initiateEmailSignIn(authInstance: Auth, email: string, password:
 }
 
 /** Initiate Google sign-in (non-blocking). */
-export function initiateGoogleSignIn(authInstance: Auth): void {
+export function initiateGoogleSignIn(authInstance: Auth, onLoadingChange?: (loading: boolean) => void): void {
   const provider = new GoogleAuthProvider();
-  signInWithPopup(authInstance, provider).catch((error) => {
-    if (error.code === 'auth/operation-not-allowed') {
-      alert("Google authentication is not enabled in the Firebase Console. Please enable it to proceed.");
-    } else {
-      console.error("Google Sign-In Error:", error);
-    }
-  });
+  if (onLoadingChange) onLoadingChange(true);
+  
+  signInWithPopup(authInstance, provider)
+    .then(() => {
+      if (onLoadingChange) onLoadingChange(false);
+    })
+    .catch((error) => {
+      if (onLoadingChange) onLoadingChange(false);
+      
+      if (error.code === 'auth/operation-not-allowed') {
+        alert("Google authentication is not enabled in the Firebase Console. \n\n1. Go to Authentication > Sign-in method.\n2. Click 'Add new provider'.\n3. Select Google and click 'Enable'.");
+      } else if (error.code === 'auth/popup-blocked') {
+        alert("The sign-in popup was blocked by your browser. Please allow popups for this site and try again.");
+      } else if (error.code === 'auth/unauthorized-domain') {
+        alert("This domain is not authorized for Google Sign-in. \n\n1. Go to Authentication > Settings > Authorized domains.\n2. Add this domain to the list.");
+      } else if (error.code === 'auth/cancelled-popup-request' || error.code === 'auth/popup-closed-by-user') {
+        // User closed the popup, no need for an alert
+      } else {
+        console.error("Google Sign-In Error:", error);
+        alert("Google Sign-In failed: " + error.message);
+      }
+    });
 }
