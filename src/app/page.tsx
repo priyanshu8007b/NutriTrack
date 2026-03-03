@@ -34,7 +34,7 @@ import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { DEFAULT_GOALS, INDIAN_FOOD_DATABASE } from "@/lib/mock-data"
+import { DEFAULT_GOALS, FOOD_BY_ID } from "@/lib/mock-data"
 import { cn } from "@/lib/utils"
 import { 
   useUser, 
@@ -80,7 +80,6 @@ export default function DashboardPage() {
   const handleVegToggle = (checked: boolean) => {
     if (!db || !user?.uid) return
     const ref = doc(db, "userProfiles", user.uid)
-    // Ensure the document has the required fields upon creation/merge
     setDocumentNonBlocking(ref, { 
       id: user.uid,
       isVegOnly: checked,
@@ -89,7 +88,7 @@ export default function DashboardPage() {
     }, { merge: true })
   }
 
-  // --- Data Processing ---
+  // --- Data Processing (Optimized with O(1) Map) ---
 
   const todayTotals = React.useMemo(() => {
     if (!allLogs || !mounted) return { calories: 0, protein: 0, carbs: 0, fats: 0 }
@@ -103,7 +102,7 @@ export default function DashboardPage() {
     })
 
     return todayLogs.reduce((acc, log) => {
-      const food = INDIAN_FOOD_DATABASE.find(f => f.id.toString() === log.foodId)
+      const food = FOOD_BY_ID.get(log.foodId)
       if (!food) return acc
       return {
         calories: acc.calories + (food.calories * log.quantity),
@@ -115,15 +114,15 @@ export default function DashboardPage() {
   }, [allLogs, mounted])
 
   const calorieTarget = userGoal?.targetCalories || DEFAULT_GOALS.calories
-  const proteinTarget = userGoal ? Math.round(userGoal.targetCalories * userGoal.targetProteinRatio / 4) : DEFAULT_GOALS.protein
-  const carbsTarget = userGoal ? Math.round(userGoal.targetCalories * userGoal.targetCarbsRatio / 4) : DEFAULT_GOALS.carbs
-  const fatsTarget = userGoal ? Math.round(userGoal.targetCalories * userGoal.targetFatsRatio / 9) : DEFAULT_GOALS.fats
+  const proteinTarget = userGoal ? Math.round(userGoal.targetCalories * (userGoal.targetProteinRatio || 0.2) / 4) : DEFAULT_GOALS.protein
+  const carbsTarget = userGoal ? Math.round(userGoal.targetCalories * (userGoal.targetCarbsRatio || 0.5) / 4) : DEFAULT_GOALS.carbs
+  const fatsTarget = userGoal ? Math.round(userGoal.targetCalories * (userGoal.targetFatsRatio || 0.3) / 9) : DEFAULT_GOALS.fats
 
-  const macroData = [
+  const macroData = React.useMemo(() => [
     { name: "Protein", value: todayTotals.protein, color: "hsl(var(--primary))" },
     { name: "Carbs", value: todayTotals.carbs, color: "hsl(var(--accent))" },
     { name: "Fats", value: todayTotals.fats, color: "hsl(var(--chart-3))" },
-  ]
+  ], [todayTotals])
 
   const totalMacros = todayTotals.protein + todayTotals.carbs + todayTotals.fats
 
@@ -364,7 +363,7 @@ export default function DashboardPage() {
             {allLogs && allLogs.length > 0 ? (
               <div className="space-y-4">
                 {allLogs.slice().reverse().slice(0, 3).map((log) => {
-                  const food = INDIAN_FOOD_DATABASE.find(f => f.id.toString() === log.foodId)
+                  const food = FOOD_BY_ID.get(log.foodId)
                   return (
                     <div key={log.id} className="flex items-center justify-between group">
                       <div className="flex items-center gap-3">
@@ -408,7 +407,7 @@ function processWeeklyData(logs: any[]) {
     const logDate = new Date(log.loggedAt)
     if (logDate >= sevenDaysAgo) {
       const dayName = days[logDate.getDay()]
-      const food = INDIAN_FOOD_DATABASE.find(f => f.id.toString() === log.foodId)
+      const food = FOOD_BY_ID.get(log.foodId)
       if (food) {
         const dayObj = weekly.find(d => d.day === dayName)
         if (dayObj) dayObj.calories += Math.round(food.calories * log.quantity)
@@ -416,7 +415,6 @@ function processWeeklyData(logs: any[]) {
     }
   })
 
-  // Reorder to put "today" last
   const todayIdx = now.getDay()
   return [...weekly.slice(todayIdx + 1), ...weekly.slice(0, todayIdx + 1)]
 }

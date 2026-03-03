@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Target, Save, RefreshCcw, Calculator as CalcIcon, ChevronRight, Info } from "lucide-react"
+import { Target, Save, RefreshCcw, Calculator as CalcIcon, ChevronRight } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -29,7 +29,7 @@ export default function GoalsPage() {
   const [goals, setGoals] = React.useState(DEFAULT_GOALS)
   const [hasCalculated, setHasCalculated] = React.useState(false)
 
-  // Calculator State - Initialized to blank strings as requested
+  // Calculator State - Initialized to blank strings for user metrics
   const [metrics, setMetrics] = React.useState({
     weight: "",
     height: "",
@@ -39,8 +39,6 @@ export default function GoalsPage() {
     goal: "maintenance"
   })
 
-  // --- Firestore Sync ---
-  
   const userGoalRef = useMemoFirebase(() => {
     if (!db || !user?.uid) return null
     return doc(db, "userProfiles", user.uid, "userGoal", "userGoal")
@@ -48,7 +46,6 @@ export default function GoalsPage() {
 
   const { data: remoteGoal, isLoading: isGoalLoading } = useDoc(userGoalRef)
 
-  // Initialize from Firestore if data exists
   React.useEffect(() => {
     if (remoteGoal) {
       setGoals({
@@ -123,7 +120,6 @@ export default function GoalsPage() {
       return
     }
 
-    // Harris-Benedict Equation
     let bmr = 0
     if (metrics.gender === "male") {
       bmr = 88.362 + (13.397 * w) + (4.799 * h) - (5.677 * a)
@@ -133,7 +129,7 @@ export default function GoalsPage() {
 
     let tdee = Math.round(bmr * act)
     
-    // Apply Goal Offsets as requested
+    // Apply fitness goal logic
     if (metrics.goal === "loss") {
       tdee = Math.max(1200, tdee - 400) // Fat loss: -400 kcal
     } else if (metrics.goal === "gain") {
@@ -278,10 +274,7 @@ export default function GoalsPage() {
             {hasCalculated && (
               <div className="pt-8 border-t border-dashed border-border/50 animate-in fade-in slide-in-from-top-4">
                 <div className="text-center py-8 bg-primary/5 rounded-3xl border border-primary/20 relative overflow-hidden">
-                  <div className="absolute top-2 right-4 flex items-center gap-1">
-                    <Target className="w-3 h-3 text-primary" />
-                    <span className="text-[10px] font-black uppercase tracking-tighter text-primary">Target Calculated</span>
-                  </div>
+                  <Target className="absolute top-2 right-4 w-3 h-3 text-primary" />
                   <span className="text-6xl font-black text-primary">{goals.calories}</span>
                   <span className="text-lg font-bold text-muted-foreground block mt-2">kcal / day</span>
                 </div>
@@ -308,7 +301,7 @@ export default function GoalsPage() {
           <Card className="shadow-sm border-border/50 overflow-hidden">
             <CardHeader className="bg-secondary/10 pb-6">
               <CardTitle className="text-xl font-bold">Step 2: Macro Balance</CardTitle>
-              <CardDescription>Adjust your daily nutrient distribution</CardDescription>
+              <CardDescription>Adjust your nutrient distribution</CardDescription>
             </CardHeader>
             <CardContent className="space-y-8 pt-8">
               <MacroInput 
@@ -348,13 +341,6 @@ export default function GoalsPage() {
                   <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-accent" /> {carbsPercent.toFixed(0)}% Carbs</span>
                   <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-foreground/60" /> {fatsPercent.toFixed(0)}% Fats</span>
                 </div>
-
-                {totalCaloriesFromMacros > goals.calories + 50 && (
-                  <div className="p-3 bg-destructive/10 text-destructive text-[10px] font-bold uppercase tracking-tight rounded-lg flex items-center gap-2">
-                    <Info className="w-3 h-3" />
-                    Warning: Macro total exceeds calorie target.
-                  </div>
-                )}
               </div>
             </CardContent>
           </Card>

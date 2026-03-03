@@ -1,9 +1,9 @@
 "use client"
 
 import * as React from "react"
-import { Search, Info, Filter, ArrowUpRight, Leaf, Utensils } from "lucide-react"
+import { Search, Info, Filter, Leaf, Utensils } from "lucide-react"
 import { INDIAN_FOOD_DATABASE } from "@/lib/mock-data"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -20,15 +20,20 @@ export default function DatabasePage() {
   const [search, setSearch] = React.useState("")
   const [category, setCategory] = React.useState<string | null>(null)
   const [dietType, setDietType] = React.useState<"all" | "veg" | "non-veg">("all")
+  const [displayCount, setDisplayCount] = React.useState(30)
 
-  const categories = Array.from(new Set(INDIAN_FOOD_DATABASE.map(f => f.category)))
+  const categories = React.useMemo(() => Array.from(new Set(INDIAN_FOOD_DATABASE.map(f => f.category))), [])
 
-  const filtered = INDIAN_FOOD_DATABASE.filter(food => {
-    const matchesSearch = food.name.toLowerCase().includes(search.toLowerCase())
-    const matchesCategory = category ? food.category === category : true
-    const matchesDiet = dietType === "all" ? true : (dietType === "veg" ? food.isVeg : !food.isVeg)
-    return matchesSearch && matchesCategory && matchesDiet
-  })
+  const filtered = React.useMemo(() => {
+    return INDIAN_FOOD_DATABASE.filter(food => {
+      const matchesSearch = !search || food.name.toLowerCase().includes(search.toLowerCase())
+      const matchesCategory = !category || food.category === category
+      const matchesDiet = dietType === "all" ? true : (dietType === "veg" ? food.isVeg : !food.isVeg)
+      return matchesSearch && matchesCategory && matchesDiet
+    })
+  }, [search, category, dietType])
+
+  const visibleItems = React.useMemo(() => filtered.slice(0, displayCount), [filtered, displayCount])
 
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
@@ -46,7 +51,10 @@ export default function DatabasePage() {
             placeholder="Search Pan-India dishes... (e.g. Dosa, Rogan Josh, Momos)" 
             className="pl-10 h-12 bg-white border-border/50"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value)
+              setDisplayCount(30)
+            }}
           />
         </div>
         
@@ -58,7 +66,7 @@ export default function DatabasePage() {
                 {category || "All Categories"}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="end" className="w-56 max-h-[400px] overflow-y-auto">
               <DropdownMenuItem onClick={() => setCategory(null)}>All Categories</DropdownMenuItem>
               {categories.map(cat => (
                 <DropdownMenuItem key={cat} onClick={() => setCategory(cat)}>{cat}</DropdownMenuItem>
@@ -108,7 +116,7 @@ export default function DatabasePage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.map((food) => (
+            {visibleItems.map((food) => (
               <TableRow key={food.id} className="hover:bg-primary/5 group cursor-pointer transition-colors">
                 <TableCell className="font-bold py-5 pl-8 text-foreground">
                   <div className="flex flex-col gap-1">
@@ -141,11 +149,23 @@ export default function DatabasePage() {
             )}
           </TableBody>
         </Table>
+        
+        {displayCount < filtered.length && (
+          <div className="p-4 border-t border-border/30 bg-secondary/10 flex justify-center">
+            <Button 
+              variant="outline" 
+              onClick={() => setDisplayCount(prev => prev + 50)}
+              className="font-bold px-8"
+            >
+              Load 50 More Items
+            </Button>
+          </div>
+        )}
       </Card>
       
       <div className="flex items-center gap-2 text-sm text-muted-foreground bg-secondary/20 p-4 rounded-xl border border-border/50">
         <Info className="w-4 h-4 text-primary" />
-        Values are based on standard preparation weights. Serving sizes vary by household and restaurant.
+        Displaying {Math.min(displayCount, filtered.length)} of {filtered.length} matches. Values are based on standard preparation weights.
       </div>
     </div>
   )

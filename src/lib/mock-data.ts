@@ -10,7 +10,7 @@ export interface FoodItem {
   servingSize: string; // Weight or standard measure (e.g., "100g", "1 unit")
 }
 
-export const INDIAN_FOOD_DATABASE: FoodItem[] = [
+const BASE_DATABASE: FoodItem[] = [
   // --- NORTH INDIAN STAPLES ---
   { id: 1, name: "Chole Bhature", calories: 450, protein: 12, carbs: 55, fats: 22, category: "Breakfast", isVeg: true, servingSize: "2 units + 1 bowl" },
   { id: 2, name: "Butter Chicken", calories: 480, protein: 32, carbs: 12, fats: 35, category: "Main Course", isVeg: false, servingSize: "250g" },
@@ -70,8 +70,10 @@ export const INDIAN_FOOD_DATABASE: FoodItem[] = [
   { id: 48, name: "Phulka (With Ghee)", calories: 105, protein: 3, carbs: 15, fats: 4, category: "Bread", isVeg: true, servingSize: "1 unit" },
   { id: 49, name: "Baingan Bharta", calories: 140, protein: 4, carbs: 12, fats: 9, category: "Side Dish", isVeg: true, servingSize: "150g" },
   { id: 50, name: "Curd Rice", calories: 280, protein: 7, carbs: 48, fats: 6, category: "Rice", isVeg: true, servingSize: "250g" },
+];
 
-  // --- GENERATING THE REMAINDER TO ~1000 ITEMS DETERMINISTICALLY ---
+export const INDIAN_FOOD_DATABASE: FoodItem[] = [
+  ...BASE_DATABASE,
   ...Array.from({ length: 950 }, (_, i) => {
     const id = 51 + i;
     const regions = ["North", "South", "West", "East", "Central", "Punjabi", "Bengali", "Mughlai", "Tamil", "Kashmiri", "Gujarati", "Maharashtrian", "Rajasthani", "Kerala"];
@@ -94,9 +96,7 @@ export const INDIAN_FOOD_DATABASE: FoodItem[] = [
     const ingredients = ["Paneer", "Chicken", "Mutton", "Aloo", "Gobi", "Mixed Veg", "Egg", "Prawn", "Fish", "Lentil", "Soy Chunk", "Mushroom"];
     const ingredient = ingredients[(i * 7) % ingredients.length];
     
-    // Determine if veg or non-veg based on ingredients
     const isActuallyVeg = !["Chicken", "Mutton", "Prawn", "Fish", "Egg"].includes(ingredient);
-    
     const name = `${region} ${ingredient} ${type.name} (v${id})`;
     
     return {
@@ -113,17 +113,10 @@ export const INDIAN_FOOD_DATABASE: FoodItem[] = [
   })
 ];
 
-export interface MealLog {
-  id: string;
-  foodId: number;
-  foodName: string;
-  quantity: number;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fats: number;
-  loggedAt: string;
-}
+// High-performance O(1) lookup map
+export const FOOD_BY_ID = new Map<string, FoodItem>(
+  INDIAN_FOOD_DATABASE.map(f => [f.id.toString(), f])
+);
 
 export interface UserGoals {
   calories: number;
