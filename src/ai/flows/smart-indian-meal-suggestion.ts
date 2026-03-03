@@ -56,7 +56,7 @@ export async function smartIndianMealSuggestion(input: SmartIndianMealSuggestion
   
   if (!apiKey) {
     console.error("AI CONFIG ERROR: Missing GOOGLE_GENAI_API_KEY in environment variables.");
-    throw new Error("AI service is not configured. Please add GOOGLE_GENAI_API_KEY to your environment settings.");
+    throw new Error("AI service is not configured. Please add GOOGLE_GENAI_API_KEY to your environment settings (Vercel Project Settings).");
   }
 
   try {
