@@ -1,8 +1,7 @@
-
 "use client"
 
 import * as React from "react"
-import { Search, Plus, Trash2, Clock, Calculator, Info, UtensilsCrossed, Filter } from "lucide-react"
+import { Search, Plus, Trash2, Clock, Calculator, Info, UtensilsCrossed, Filter, Leaf, Utensils } from "lucide-react"
 import { INDIAN_FOOD_DATABASE, FoodItem } from "@/lib/mock-data"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -24,18 +23,16 @@ export default function LogMealPage() {
   const filteredFoods = INDIAN_FOOD_DATABASE.filter(food => {
     const matchesSearch = food.name.toLowerCase().includes(search.toLowerCase())
     
-    // Mapping internal database categories to UI filters
     if (selectedCategory === "All") return matchesSearch
     
     if (selectedCategory === "Breakfast") {
-      return matchesSearch && food.category === "Breakfast"
+      return matchesSearch && (food.category === "Breakfast" || food.category === "Bread")
     }
     
     if (selectedCategory === "Snacks") {
       return matchesSearch && (food.category === "Snack" || food.category === "Beverage")
     }
     
-    // Lunch and Dinner usually share these main components in the mock database
     const isMainMeal = ["Main Course", "Lentils", "Rice", "Bread", "Side Dish"].includes(food.category)
     if (selectedCategory === "Lunch" || selectedCategory === "Dinner") {
       return matchesSearch && isMainMeal
@@ -91,7 +88,7 @@ export default function LogMealPage() {
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
       <header>
         <h1 className="text-4xl font-black tracking-tight text-foreground">Log Indian Meal</h1>
-        <p className="text-muted-foreground mt-2 text-lg">Search our database or add custom items to your daily intake.</p>
+        <p className="text-muted-foreground mt-2 text-lg">Detailed tracking with authentic weights and regional variety.</p>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -101,7 +98,7 @@ export default function LogMealPage() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input 
-                  placeholder="Search for Indian dishes (e.g., Paneer, Dosa...)" 
+                  placeholder="Search over 500+ Indian dishes..." 
                   className="pl-10 h-12 bg-secondary/20 border-border/50 focus:ring-primary/20"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
@@ -134,13 +131,18 @@ export default function LogMealPage() {
                       className="group flex items-center justify-between p-4 rounded-xl border border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer bg-card/50"
                       onClick={() => handleAddItem(food)}
                     >
-                      <div className="flex flex-col">
-                        <span className="font-bold text-foreground text-base">{food.name}</span>
-                        <div className="flex gap-2 items-center mt-1">
+                      <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-2">
+                          {food.isVeg ? <Leaf className="w-3 h-3 text-green-600 fill-current" /> : <Utensils className="w-3 h-3 text-red-600" />}
+                          <span className="font-bold text-foreground text-base">{food.name}</span>
+                        </div>
+                        <div className="flex gap-3 items-center mt-1">
                           <Badge variant="outline" className="text-[9px] uppercase font-black tracking-widest py-0 px-2 bg-secondary/50 border-none">
                             {food.category}
                           </Badge>
-                          <span className="text-xs text-muted-foreground font-medium">{food.calories} kcal per serving</span>
+                          <span className="text-xs text-muted-foreground font-medium italic">
+                            Serving: {food.servingSize} • {food.calories} kcal
+                          </span>
                         </div>
                       </div>
                       <Button variant="secondary" size="icon" className="group-hover:bg-primary group-hover:text-primary-foreground rounded-full shadow-sm transition-colors">
@@ -153,7 +155,7 @@ export default function LogMealPage() {
                       <div className="w-12 h-12 rounded-full bg-secondary/50 flex items-center justify-center">
                         <Filter className="w-6 h-6 text-muted-foreground opacity-20" />
                       </div>
-                      <p className="text-muted-foreground font-medium">No dishes found matching your criteria.</p>
+                      <p className="text-muted-foreground font-medium">No regional matches found.</p>
                     </div>
                   )}
                 </div>
@@ -163,14 +165,14 @@ export default function LogMealPage() {
         </div>
 
         <div className="lg:col-span-5 space-y-6">
-          <Card className="shadow-xl border-primary/20 sticky top-8 bg-card/50 backdrop-blur-sm overflow-hidden">
+          <Card className="shadow-xl border-primary/20 sticky top-8 bg-card/50 backdrop-blur-sm overflow-hidden rounded-[2rem]">
             <CardHeader className="border-b border-border/50 bg-secondary/10 py-6">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xl font-black flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <Calculator className="w-6 h-6 text-primary" />
+                    <UtensilsCrossed className="w-6 h-6 text-primary" />
                   </div>
-                  Meal Summary
+                  Your Plate
                 </CardTitle>
                 <Badge className="bg-primary text-primary-foreground font-black px-3 py-1">
                   {selectedItems.length} {selectedItems.length === 1 ? 'Item' : 'Items'}
@@ -190,7 +192,7 @@ export default function LogMealPage() {
                               <div className="flex gap-2 text-[10px] text-muted-foreground uppercase font-black tracking-tighter">
                                 <span>{(item.food.calories * item.quantity).toFixed(0)} kcal</span>
                                 <span>•</span>
-                                <span>{(item.food.protein * item.quantity).toFixed(1)}g Protein</span>
+                                <span>{item.food.servingSize} × {item.quantity}</span>
                               </div>
                             </div>
                             <div className="flex items-center gap-1.5">
@@ -231,7 +233,7 @@ export default function LogMealPage() {
 
                   <div className="bg-primary/5 p-6 rounded-[2rem] border border-primary/10 space-y-6">
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground font-bold text-sm uppercase tracking-widest">Total Energy</span>
+                      <span className="text-muted-foreground font-bold text-sm uppercase tracking-widest">Logged Intake</span>
                       <span className="text-3xl font-black text-primary">{totals.calories.toFixed(0)} <span className="text-xs uppercase">kcal</span></span>
                     </div>
                     <div className="grid grid-cols-3 gap-3">
@@ -256,8 +258,8 @@ export default function LogMealPage() {
                     <UtensilsCrossed className="w-10 h-10 opacity-10" />
                   </div>
                   <div className="space-y-1">
-                    <p className="font-black text-lg text-foreground">Your plate is empty</p>
-                    <p className="text-sm font-medium">Add items from the database to start logging your meal.</p>
+                    <p className="font-black text-lg text-foreground">Nothing on your plate</p>
+                    <p className="text-sm font-medium">Add items to start tracking your regional meal.</p>
                   </div>
                 </div>
               )}
@@ -271,20 +273,6 @@ export default function LogMealPage() {
                 Log This Meal
               </Button>
             </CardFooter>
-          </Card>
-
-          <Card className="bg-accent/5 border-accent/20 rounded-[2rem]">
-            <CardContent className="p-6 flex gap-4">
-              <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
-                <Info className="w-5 h-5 text-accent" />
-              </div>
-              <div className="text-sm space-y-1">
-                <p className="font-black text-accent uppercase tracking-widest text-xs">Nutritional Advice</p>
-                <p className="text-muted-foreground font-medium leading-relaxed">
-                  Indian meals often have higher carbs. Try adding protein-rich sides like <span className="text-foreground font-bold">Curd</span> or <span className="text-foreground font-bold">Dal</span> to balance your macros.
-                </p>
-              </div>
-            </CardContent>
           </Card>
         </div>
       </div>
