@@ -48,7 +48,12 @@ const SmartIndianMealSuggestionOutputSchema = z.object({
 export type SmartIndianMealSuggestionOutput = z.infer<typeof SmartIndianMealSuggestionOutputSchema>;
 
 export async function smartIndianMealSuggestion(input: SmartIndianMealSuggestionInput): Promise<SmartIndianMealSuggestionOutput> {
-  return smartIndianMealSuggestionFlow(input);
+  try {
+    return await smartIndianMealSuggestionFlow(input);
+  } catch (error: any) {
+    console.error("AI Flow Error:", error);
+    throw new Error(error.message || "The AI nutritionist is currently offline. Please check your API key and try again.");
+  }
 }
 
 const prompt = ai.definePrompt({
@@ -63,13 +68,18 @@ const prompt = ai.definePrompt({
     })
   })},
   output: {schema: SmartIndianMealSuggestionOutputSchema},
-  prompt: `You are an expert Indian nutritionist and chef. Your task is to analyze a user's daily nutritional goals and their consumed macros, then suggest culturally relevant Indian dishes or meal combinations to help them meet their remaining macro targets for the day.
-
+  system: `You are an expert Indian nutritionist and chef. Your task is to analyze a user's daily nutritional goals and their consumed macros, then suggest authentic and healthy Indian dishes or meal combinations. 
+  
+  Focus on:
+  1. Cultural relevance: Use regional names (e.g., "Paneer Bhurji", "Moong Dal Khichdi", "Chicken Chettinad").
+  2. Macro accuracy: Suggestions must realistically help fill the remaining macro gap.
+  3. Dietary strictness: If 'isVegOnly' is true, NEVER suggest meat, eggs, or fish.`,
+  prompt: `
 DIETARY PREFERENCE:
 {{#if input.isVegOnly}}
-- The user is VEGETARIAN. DO NOT suggest any meat, fish, or eggs. Suggest only pure vegetarian (veg) Indian dishes.
+- VEGETARIAN ONLY.
 {{else}}
-- The user has no specific dietary restrictions. You can suggest both veg and non-veg Indian dishes.
+- ANY (Veg or Non-Veg).
 {{/if}}
 
 CURRENT MEAL CONTEXT:
@@ -81,10 +91,9 @@ CURRENT MEAL CONTEXT:
   - Fats: {{{remaining.fats}}}g
 
 INSTRUCTIONS:
-1. Suggest 2-3 authentic Indian dishes or combinations (like "Paneer Bhurji with 2 Rotis" or "Moong Dal Khichdi with Curd").
-2. If the user has already exceeded their calories (negative remaining calories), suggest extremely light options like "Kachumber Salad", "Spiced Chaas (Buttermilk)", or "Lemon Water with Chia Seeds".
-3. Ensure the estimated macros for each suggestion are realistic.
-4. Provide the exact 'remainingMacros' object passed in the context.`,
+1. Suggest 2-3 authentic Indian options.
+2. If remaining calories are low (<200), suggest light options like "Buttermilk (Chaas)" or "Spiced Sprouted Salad".
+3. Return the exact 'remainingMacros' provided in the context.`,
 });
 
 const smartIndianMealSuggestionFlow = ai.defineFlow(
@@ -94,12 +103,12 @@ const smartIndianMealSuggestionFlow = ai.defineFlow(
     outputSchema: SmartIndianMealSuggestionOutputSchema,
   },
   async (input) => {
-    // Perform accurate calculation in TypeScript before hitting the LLM
+    // Precise calculation
     const remaining = {
-      calories: Math.max(0, input.dailyCalorieGoal - input.consumedCalories),
-      protein: Math.max(0, input.dailyProteinGoal - input.consumedProtein),
-      carbs: Math.max(0, input.dailyCarbGoal - input.consumedCarbs),
-      fats: Math.max(0, input.dailyFatGoal - input.consumedFats),
+      calories: Math.round(Math.max(0, input.dailyCalorieGoal - input.consumedCalories)),
+      protein: Math.round(Math.max(0, input.dailyProteinGoal - input.consumedProtein)),
+      carbs: Math.round(Math.max(0, input.dailyCarbGoal - input.consumedCarbs)),
+      fats: Math.round(Math.max(0, input.dailyFatGoal - input.consumedFats)),
     };
 
     const {output} = await prompt({
@@ -107,14 +116,10 @@ const smartIndianMealSuggestionFlow = ai.defineFlow(
       remaining,
     });
     
-    // Safety check to ensure LLM returns valid output
-    if (!output) {
-      throw new Error("Failed to generate meal suggestions. Please try again.");
+    if (!output || !output.mealSuggestions) {
+      throw new Error("The AI failed to generate specific meal suggestions. Please try adjusting your meal type.");
     }
 
-    return {
-      remainingMacros: remaining,
-      mealSuggestions: output.mealSuggestions || [],
-    };
+    return output;
   }
 );

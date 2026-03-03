@@ -92,7 +92,7 @@ export default function SuggestionsPage() {
     }
 
     setLoading(true)
-    setResult(null)
+    setResult(null) // Reset result to show loading state
     
     try {
       const output = await smartIndianMealSuggestion({
@@ -107,12 +107,22 @@ export default function SuggestionsPage() {
         isVegOnly: userProfile?.isVegOnly || false,
         currentMealType: mealType
       })
+      
+      if (!output) {
+        throw new Error("No suggestions were returned. Please try again.")
+      }
+      
       setResult(output)
+      toast({
+        title: "Suggestions Ready",
+        description: `Found ${output.mealSuggestions.length} healthy Indian options for your ${mealType}.`,
+      })
     } catch (error: any) {
+      console.error("Suggestion Error:", error)
       toast({
         variant: "destructive",
-        title: "Suggestion failed",
-        description: error.message || "Something went wrong while generating suggestions. Make sure you have set your goals and logged some meals today.",
+        title: "Generation Failed",
+        description: error.message || "Ensure your GOOGLE_GENAI_API_KEY is set in your Vercel environment.",
       })
     } finally {
       setLoading(false)
