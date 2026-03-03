@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Sparkles, Loader2, ArrowRight, Info, CheckCircle2, Utensils, Zap, Target } from "lucide-react"
+import { Sparkles, Loader2, Info, CheckCircle2, Utensils, Zap, Target } from "lucide-react"
 import { smartIndianMealSuggestion, SmartIndianMealSuggestionOutput } from "@/ai/flows/smart-indian-meal-suggestion"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -91,7 +91,7 @@ export default function SuggestionsPage() {
       return
     }
 
-    setResult(null) // Reset result to show loading state immediately
+    setResult(null) 
     setLoading(true)
     
     try {
@@ -108,21 +108,16 @@ export default function SuggestionsPage() {
         currentMealType: mealType
       })
       
-      if (!output) {
-        throw new Error("No suggestions were returned. Please try again.")
-      }
-      
       setResult(output)
       toast({
         title: "Suggestions Ready",
-        description: `Found ${output.mealSuggestions.length} healthy Indian options for your ${mealType}.`,
+        description: `Found fresh Indian options for your ${mealType}.`,
       })
     } catch (error: any) {
-      console.error("Suggestion Error:", error)
       toast({
         variant: "destructive",
         title: "Generation Failed",
-        description: error.message || "Ensure your GOOGLE_GENAI_API_KEY is set in your Vercel environment.",
+        description: error.message || "Please check your API key configuration.",
       })
     } finally {
       setLoading(false)
@@ -156,7 +151,7 @@ export default function SuggestionsPage() {
             Smart Indian Suggestions
           </h1>
           <p className="text-muted-foreground text-lg md:text-xl max-w-2xl font-medium leading-relaxed">
-            Our AI analyzes your real-time remaining macros to suggest authentic Indian meals.
+            AI-crafted Indian meals based on your real-time macro balance.
           </p>
         </div>
       </header>
@@ -187,7 +182,7 @@ export default function SuggestionsPage() {
                 </Select>
               </div>
               <Button 
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-black h-14 shadow-lg shadow-primary/30 group relative overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98]"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-black h-14 shadow-lg shadow-primary/30 group transition-all active:scale-[0.98]"
                 onClick={handleSuggest}
                 disabled={loading}
               >
@@ -195,7 +190,7 @@ export default function SuggestionsPage() {
                   {loading ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      Analyzing Spices...
+                      Crafting Menu...
                     </>
                   ) : (
                     <>
@@ -210,7 +205,7 @@ export default function SuggestionsPage() {
                 <div className="flex gap-3">
                   <Info className="w-5 h-5 text-primary shrink-0" />
                   <p className="text-[11px] text-muted-foreground leading-relaxed font-medium">
-                    Suggestions consider your <strong>logged calories</strong> ({Math.round(todayTotals.calories)}) and <strong>macro balance</strong> for today.
+                    Suggestions consider your <strong>logged calories</strong> ({Math.round(todayTotals.calories)}) and <strong>macro balance</strong>.
                   </p>
                 </div>
               </div>
@@ -259,7 +254,7 @@ export default function SuggestionsPage() {
               <div className="max-w-md space-y-2">
                 <p className="text-2xl font-black text-foreground">Waiting for your request</p>
                 <p className="text-muted-foreground font-medium">
-                  Select a meal type on the left and click the button to see AI-powered recommendations based on your real-time nutrition data.
+                  Select a meal type and click the button to see AI recommendations tailored to your goals.
                 </p>
               </div>
             </div>
@@ -281,7 +276,7 @@ export default function SuggestionsPage() {
           )}
 
           {result && !loading && (
-            <div className="space-y-8 animate-in slide-in-from-bottom-8 duration-700 fill-mode-both">
+            <div className="space-y-8 animate-in slide-in-from-bottom-8 duration-700">
               <Card className="bg-gradient-to-br from-primary/10 via-background to-background border-primary/20 overflow-hidden shadow-sm">
                 <CardHeader className="bg-primary/5 border-b border-primary/10 py-4">
                   <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2">
@@ -303,12 +298,11 @@ export default function SuggestionsPage() {
                 {result.mealSuggestions.map((suggestion, idx) => (
                   <Card key={idx} className="group shadow-md hover:shadow-2xl border-border/50 transition-all duration-500 overflow-hidden rounded-[2rem]">
                     <div className="flex flex-col md:flex-row min-h-[300px]">
-                      <div className="md:w-1/3 bg-secondary/30 relative flex items-center justify-center p-12 overflow-hidden">
-                        <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                        <Utensils className="w-20 h-20 text-primary/20 group-hover:scale-125 group-hover:rotate-12 transition-transform duration-700 relative z-10" />
+                      <div className="md:w-1/3 bg-secondary/30 relative flex items-center justify-center p-12">
+                        <Utensils className="w-20 h-20 text-primary/20 transition-transform duration-700 relative z-10" />
                         {suggestion.isCombination && (
-                          <div className="absolute top-6 left-6 flex flex-col gap-2">
-                            <Badge className="bg-accent text-accent-foreground font-black uppercase tracking-tighter text-[10px] px-3 py-1 shadow-lg shadow-accent/20">
+                          <div className="absolute top-6 left-6">
+                            <Badge className="bg-accent text-accent-foreground font-black uppercase tracking-tighter text-[10px] px-3 py-1">
                               Balanced Combo
                             </Badge>
                           </div>
@@ -316,12 +310,9 @@ export default function SuggestionsPage() {
                       </div>
                       <div className="md:w-2/3 p-8 md:p-10 flex flex-col justify-between space-y-8">
                         <div className="space-y-4">
-                          <div className="space-y-1">
-                            <h3 className="text-3xl font-black text-foreground group-hover:text-primary transition-colors leading-tight">
-                              {suggestion.dishName}
-                            </h3>
-                            <div className="h-1 w-12 bg-primary rounded-full transform group-hover:w-24 transition-all duration-500" />
-                          </div>
+                          <h3 className="text-3xl font-black text-foreground leading-tight">
+                            {suggestion.dishName}
+                          </h3>
                           <p className="text-muted-foreground font-medium text-lg leading-relaxed">
                             {suggestion.description}
                           </p>

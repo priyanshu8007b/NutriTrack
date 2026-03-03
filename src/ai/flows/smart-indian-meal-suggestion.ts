@@ -11,10 +11,10 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const SmartIndianMealSuggestionInputSchema = z.object({
-  dailyCalorieGoal: z.number().describe('The user\'s daily calorie target.'),
-  dailyProteinGoal: z.number().describe('The user\'s daily protein target in grams.'),
-  dailyCarbGoal: z.number().describe('The user\'s daily carbohydrate target in grams.'),
-  dailyFatGoal: z.number().describe('The user\'s daily fat target in grams.'),
+  dailyCalorieGoal: z.number().describe("The user's daily calorie target."),
+  dailyProteinGoal: z.number().describe("The user's daily protein target in grams."),
+  dailyCarbGoal: z.number().describe("The user's daily carbohydrate target in grams."),
+  dailyFatGoal: z.number().describe("The user's daily fat target in grams."),
   consumedCalories: z.number().describe('Calories consumed so far today.'),
   consumedProtein: z.number().describe('Protein consumed so far today in grams.'),
   consumedCarbs: z.number().describe('Carbohydrates consumed so far today in grams.'),
@@ -42,17 +42,16 @@ const SmartIndianMealSuggestionOutputSchema = z.object({
     protein: z.number().describe('Remaining protein needed for the day in grams.'),
     carbs: z.number().describe('Remaining carbohydrates needed for the day in grams.'),
     fats: z.number().describe('Remaining fats needed for the day in grams.'),
-  }).describe('The user\'s remaining macronutrient targets for the day.'),
+  }).describe("The user's remaining macronutrient targets for the day."),
   mealSuggestions: z.array(MealSuggestionSchema).describe('A list of culturally relevant Indian meal suggestions.'),
 });
 export type SmartIndianMealSuggestionOutput = z.infer<typeof SmartIndianMealSuggestionOutputSchema>;
 
 export async function smartIndianMealSuggestion(input: SmartIndianMealSuggestionInput): Promise<SmartIndianMealSuggestionOutput> {
   try {
-    // Check for API key existence (common issue in production)
     const apiKey = process.env.GOOGLE_GENAI_API_KEY || process.env.GOOGLE_API_KEY;
     if (!apiKey || apiKey === 'YOUR_API_KEY_HERE') {
-      throw new Error("API Key is missing. Please add GOOGLE_GENAI_API_KEY to your Vercel Environment Variables.");
+      throw new Error("API Key is missing. Please add GOOGLE_GENAI_API_KEY to your Environment Variables.");
     }
     
     return await smartIndianMealSuggestionFlow(input);
@@ -61,14 +60,14 @@ export async function smartIndianMealSuggestion(input: SmartIndianMealSuggestion
     const message = error.message || "Unknown error";
     
     if (message.includes('API_KEY_INVALID') || message.includes('403') || message.includes('401')) {
-      throw new Error("Your Google AI API Key is invalid. Please get a fresh key from https://aistudio.google.com/app/apikey");
+      throw new Error("Invalid API Key. Please get a fresh key from https://aistudio.google.com/app/apikey");
     }
     
     if (message.includes('quota') || message.includes('429')) {
       throw new Error("AI service quota exceeded. Please try again in a moment.");
     }
 
-    throw new Error(message || "The AI nutritionist encountered an issue. Please check your data and try again.");
+    throw new Error(message || "The AI nutritionist encountered an issue.");
   }
 }
 
@@ -84,33 +83,26 @@ const prompt = ai.definePrompt({
     })
   })},
   output: {schema: SmartIndianMealSuggestionOutputSchema},
-  system: `You are an expert Indian nutritionist and chef. Your task is to analyze a user's daily nutritional goals and their consumed macros, then suggest authentic and healthy Indian dishes or meal combinations. 
-  
-  Focus on:
-  1. Cultural relevance: Use regional names (e.g., "Paneer Bhurji", "Moong Dal Khichdi", "Chicken Chettinad").
-  2. Macro accuracy: Suggestions must realistically help fill the remaining macro gap.
-  3. Dietary strictness: If 'isVegOnly' is true, NEVER suggest meat, eggs, or fish.`,
+  system: `You are an expert Indian nutritionist and master chef. Your goal is to suggest authentic, healthy, and culturally relevant Indian meals that help users meet their daily macro-nutrient targets.
+
+  Core Guidelines:
+  1. DIETARY STRICTION: If 'isVegOnly' is true, NEVER suggest meat, eggs, or fish. Focus on lentils, paneer, soy, and dairy.
+  2. CULTURAL DEPTH: Suggest dishes from diverse Indian regions (North, South, East, West). Use specific names like 'Misal Pav', 'Ragi Mudde', 'Kadhi Pakora'.
+  3. MACRO FOCUS: If protein is needed, suggest high-protein options like 'Dal Chilla', 'Soy Keema', or 'Grilled Fish'.
+  4. LIGHT OPTIONS: If remaining calories are <200, suggest healthy Indian snacks like 'Makhana', 'Sprout Salad', or 'Buttermilk'.`,
   prompt: `
-DIETARY PREFERENCE:
-{{#if input.isVegOnly}}
-- VEGETARIAN ONLY. (No meat, fish, or eggs).
-{{else}}
-- ANY (Veg or Non-Veg).
-{{/if}}
+  CONTEXT:
+  - User Preference: {{#if input.isVegOnly}}Vegetarian Only{{else}}Any (Veg/Non-Veg){{/if}}
+  - Current Meal: {{{input.currentMealType}}}
+  - Remaining Target for Today: 
+    - Calories: {{{remaining.calories}}} kcal
+    - Protein: {{{remaining.protein}}}g
+    - Carbs: {{{remaining.carbs}}}g
+    - Fats: {{{remaining.fats}}}g
 
-CURRENT MEAL CONTEXT:
-- Meal Type: {{{input.currentMealType}}}
-- Remaining Target: 
-  - Calories: {{{remaining.calories}}} kcal
-  - Protein: {{{remaining.protein}}}g
-  - Carbs: {{{remaining.carbs}}}g
-  - Fats: {{{remaining.fats}}}g
-
-INSTRUCTIONS:
-1. Suggest 2-3 authentic Indian options that fit these remaining macros.
-2. If remaining calories are low (<200), suggest light options like "Chaas", "Spiced Sprouts", or "Roasted Makhana".
-3. If remaining macros are negative (user over-limit), suggest extremely light, detoxifying options like "Warm Lemon Water with Ginger" or "Tulsi Tea" and explain they've met their goals.
-4. Return the exact 'remainingMacros' provided in the context.`,
+  TASK:
+  Provide 3 unique Indian meal suggestions that logically fit into the remaining macro budget.
+  Ensure the 'remainingMacros' in the output matches the calculated remaining values provided here.`,
 });
 
 const smartIndianMealSuggestionFlow = ai.defineFlow(
@@ -120,7 +112,6 @@ const smartIndianMealSuggestionFlow = ai.defineFlow(
     outputSchema: SmartIndianMealSuggestionOutputSchema,
   },
   async (input) => {
-    // Precise calculation of remaining macros
     const remaining = {
       calories: Math.round(Math.max(0, input.dailyCalorieGoal - input.consumedCalories)),
       protein: Math.round(Math.max(0, input.dailyProteinGoal - input.consumedProtein)),
@@ -134,7 +125,7 @@ const smartIndianMealSuggestionFlow = ai.defineFlow(
     });
     
     if (!result || !result.output) {
-      throw new Error("The AI failed to generate a response. Please try adjusting your meal type.");
+      throw new Error("AI failed to generate suggestions.");
     }
 
     return result.output;
