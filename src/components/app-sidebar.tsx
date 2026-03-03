@@ -10,6 +10,7 @@ import {
   User,
   LogOut,
   ChevronRight,
+  LogIn,
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -30,6 +31,7 @@ import {
   SidebarGroupContent,
 } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -42,7 +44,7 @@ const navigation = [
 export function AppSidebar() {
   const pathname = usePathname()
   const auth = useAuth()
-  const { user } = useUser()
+  const { user, isUserLoading } = useUser()
 
   const handleLogout = () => {
     signOut(auth).catch((error) => {
@@ -51,8 +53,8 @@ export function AppSidebar() {
   }
 
   const userInitial = user?.email?.[0]?.toUpperCase() || user?.displayName?.[0]?.toUpperCase() || "?"
-  const userName = user?.displayName || "Anonymous User"
-  const userEmail = user?.email || "No email provided"
+  const userName = user?.displayName || (user?.isAnonymous ? "Guest User" : "User")
+  const userEmail = user?.email || (user?.isAnonymous ? "Anonymous Session" : "No email")
 
   return (
     <Sidebar variant="inset" className="border-r border-border/50">
@@ -100,28 +102,39 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="border-t border-border/50 p-4">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton className="w-full flex items-center gap-3 px-4 py-6 hover:bg-secondary/50 rounded-lg">
-              <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">
-                {userInitial}
-              </div>
-              <div className="flex flex-col items-start overflow-hidden text-left">
-                <span className="text-sm font-semibold truncate w-full">{userName}</span>
-                <span className="text-xs text-muted-foreground truncate w-full">{userEmail}</span>
-              </div>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton 
-              onClick={handleLogout}
-              className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 px-4 py-4 rounded-lg mt-2 transition-colors"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              <span className="text-sm font-medium">Log out</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        {user ? (
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton className="w-full flex items-center gap-3 px-4 py-6 hover:bg-secondary/50 rounded-lg">
+                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-xs font-bold text-primary-foreground">
+                  {userInitial}
+                </div>
+                <div className="flex flex-col items-start overflow-hidden text-left">
+                  <span className="text-sm font-semibold truncate w-full">{userName}</span>
+                  <span className="text-xs text-muted-foreground truncate w-full">{userEmail}</span>
+                </div>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton 
+                onClick={handleLogout}
+                className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 px-4 py-4 rounded-lg mt-2 transition-colors"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                <span className="font-medium">Log out</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        ) : (
+          <div className="p-2">
+            <Button asChild className="w-full bg-primary hover:bg-primary/90 font-bold h-12">
+              <Link href="/login">
+                <LogIn className="w-4 h-4 mr-2" />
+                Sign In
+              </Link>
+            </Button>
+          </div>
+        )}
       </SidebarFooter>
     </Sidebar>
   )
