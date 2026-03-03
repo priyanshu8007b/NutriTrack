@@ -8,7 +8,8 @@ import {
   Wheat, 
   Droplets,
   Plus,
-  ArrowRight
+  ArrowRight,
+  Sparkles
 } from "lucide-react"
 import Link from "next/link"
 import { 
@@ -29,6 +30,7 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DEFAULT_GOALS } from "@/lib/mock-data"
+import { cn } from "@/lib/utils"
 
 const weeklyData = [
   { day: "Mon", calories: 1850 },
