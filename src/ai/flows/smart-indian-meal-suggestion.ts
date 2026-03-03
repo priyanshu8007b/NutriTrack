@@ -56,21 +56,18 @@ export async function smartIndianMealSuggestion(input: SmartIndianMealSuggestion
   
   if (!apiKey) {
     console.error("AI CONFIG ERROR: Missing GOOGLE_GENAI_API_KEY in environment variables.");
-    throw new Error("AI service is not configured. Please add GOOGLE_GENAI_API_KEY to your Vercel Project Settings.");
+    throw new Error("AI service is not configured. Please add GOOGLE_GENAI_API_KEY to your environment settings.");
   }
 
   try {
-    console.log("AI Flow Started:", { mealType: input.currentMealType, isVeg: input.isVegOnly });
     const result = await smartIndianMealSuggestionFlow(input);
-    console.log("AI Flow Completed Successfully");
     return result;
   } catch (error: any) {
     console.error("AI Flow Execution Error:", error);
     
-    // Provide user-friendly errors for common failure modes
     const message = error.message || "";
     if (message.includes('API_KEY_INVALID') || message.includes('403') || message.includes('401')) {
-      throw new Error("Invalid API Key. Please update your GOOGLE_GENAI_API_KEY in Vercel settings.");
+      throw new Error("Invalid API Key. Please update your GOOGLE_GENAI_API_KEY.");
     }
     
     if (message.includes('quota') || message.includes('429')) {
