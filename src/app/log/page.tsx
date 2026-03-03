@@ -98,7 +98,7 @@ export default function LogMealPage() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input 
-                  placeholder="Search over 500+ Indian dishes..." 
+                  placeholder="Search over 1,000+ Indian dishes..." 
                   className="pl-10 h-12 bg-secondary/20 border-border/50 focus:ring-primary/20"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}

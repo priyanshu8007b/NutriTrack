@@ -35,7 +35,7 @@ export default function DatabasePage() {
       <header>
         <h1 className="text-4xl font-black tracking-tight text-foreground">Comprehensive Indian Database</h1>
         <p className="text-muted-foreground mt-2 text-lg max-w-2xl">
-          Search over 500+ authentic Indian items with verified macro-nutrients and serving weights.
+          Search over 1,000+ authentic Indian items with verified macro-nutrients and serving weights.
         </p>
       </header>
 
