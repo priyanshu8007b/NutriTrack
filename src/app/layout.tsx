@@ -6,8 +6,8 @@ import { FirebaseClientProvider } from "@/firebase";
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: 'PaushtikPath - Indian Nutrition Tracker',
-  description: 'Your wholesome guide to Indian nutrition tracking',
+  title: 'IndiPlate - Indian Nutrition Tracker',
+  description: 'Your smart guide to balanced Indian nutrition tracking',
 };
 
 export default function RootLayout({

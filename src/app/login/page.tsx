@@ -38,7 +38,7 @@ export default function LoginPage() {
           </div>
           <div>
             <h1 className="text-4xl font-black tracking-tight text-foreground">
-              Paushtik<span className="text-primary">Path</span>
+              Indi<span className="text-primary">Plate</span>
             </h1>
             <p className="text-muted-foreground mt-2 text-lg">Your journey to balanced Indian nutrition starts here.</p>
           </div>
@@ -106,7 +106,7 @@ export default function LoginPage() {
         </Card>
 
         <p className="text-center text-xs text-muted-foreground px-8 leading-relaxed">
-          By continuing, you agree to PaushtikPath's terms of service and nutritional guidance policies.
+          By continuing, you agree to IndiPlate's terms of service and nutritional guidance policies.
         </p>
       </div>
     </div>

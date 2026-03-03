@@ -64,7 +64,7 @@ export function AppSidebar() {
             <UtensilsCrossed className="text-primary-foreground w-5 h-5" />
           </div>
           <span className="font-bold text-xl tracking-tight text-foreground">
-            Paushtik<span className="text-primary">Path</span>
+            Indi<span className="text-primary">Plate</span>
           </span>
         </div>
       </SidebarHeader>
