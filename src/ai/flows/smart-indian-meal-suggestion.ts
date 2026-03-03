@@ -55,15 +55,17 @@ export async function smartIndianMealSuggestion(input: SmartIndianMealSuggestion
   const apiKey = process.env.GOOGLE_GENAI_API_KEY || process.env.GOOGLE_API_KEY;
   
   if (!apiKey) {
-    throw new Error("AI service is not configured. Please add GOOGLE_GENAI_API_KEY to your Vercel Project Settings.");
+    throw new Error("AI service is not configured. Please add GOOGLE_GENAI_API_KEY to your Environment Variables.");
   }
 
   try {
     return await smartIndianMealSuggestionFlow(input);
   } catch (error: any) {
+    console.error("Genkit Flow Error:", error);
     const message = error.message || "";
+    
     if (message.includes('API_KEY_INVALID') || message.includes('403') || message.includes('401')) {
-      throw new Error("Invalid API Key. Please update your GOOGLE_GENAI_API_KEY in Vercel.");
+      throw new Error("Invalid API Key. Please verify GOOGLE_GENAI_API_KEY in your settings.");
     }
     
     if (message.includes('quota') || message.includes('429')) {

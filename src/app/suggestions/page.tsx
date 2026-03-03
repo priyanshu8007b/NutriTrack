@@ -163,7 +163,7 @@ export default function SuggestionsPage() {
       </header>
 
       {error && (
-        <Alert variant="destructive" className="rounded-2xl border-destructive/20 bg-destructive/5">
+        <Alert variant="destructive" className="rounded-2xl border-destructive/20 bg-destructive/5 mb-8">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Suggestion Error</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
@@ -260,7 +260,7 @@ export default function SuggestionsPage() {
         </div>
 
         <div className="lg:col-span-8">
-          {!result && !loading && (
+          {!result && !loading && !error && (
             <div className="flex flex-col items-center justify-center py-24 text-center space-y-6 bg-secondary/10 rounded-[2.5rem] border border-dashed border-border/50 px-8">
               <div className="w-20 h-20 rounded-3xl bg-white flex items-center justify-center shadow-lg transform -rotate-3">
                 <Utensils className="w-10 h-10 text-muted-foreground/30" />
@@ -342,6 +342,23 @@ export default function SuggestionsPage() {
                     </div>
                   </Card>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {error && !loading && (
+            <div className="flex flex-col items-center justify-center py-24 text-center space-y-6 bg-destructive/5 rounded-[2.5rem] border border-dashed border-destructive/20 px-8">
+              <div className="w-20 h-20 rounded-3xl bg-white flex items-center justify-center shadow-lg">
+                <AlertCircle className="w-10 h-10 text-destructive/30" />
+              </div>
+              <div className="max-w-md space-y-2">
+                <p className="text-2xl font-black text-foreground">Generation Failed</p>
+                <p className="text-muted-foreground font-medium">
+                  We encountered an issue while crafting your menu. Please check your AI configuration and try again.
+                </p>
+                <Button variant="outline" className="mt-4 font-bold" onClick={handleSuggest}>
+                  Retry Request
+                </Button>
               </div>
             </div>
           )}
