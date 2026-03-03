@@ -91,27 +91,35 @@ export const INDIAN_FOOD_DATABASE: FoodItem[] = [
   { id: 65, name: "Masala Dosa (with Potato)", calories: 350, protein: 6, carbs: 52, fats: 14, category: "Breakfast" },
 
   // Filling up to 500 items with variations and regional sub-dishes
+  // Using deterministic generation to avoid hydration errors
   ...Array.from({ length: 435 }, (_, i) => {
-    const categories = ["Main Course", "Snack", "Breakfast", "Lentils", "Rice", "Bread", "Beverage", "Side Dish"];
-    const category = categories[Math.floor(Math.random() * categories.length)];
+    const categoriesList = ["Main Course", "Snack", "Breakfast", "Lentils", "Rice", "Bread", "Beverage", "Side Dish"];
     const id = 66 + i;
     
-    // Generate some common sounding variations
+    // Use modulo for deterministic selection
+    const category = categoriesList[i % categoriesList.length];
+    
     const suffixes = ["Special", "Home Style", "Dry", "with Gravy", "Tadka", "Masala", "Plain", "Roasted"];
     const prefixes = ["Regional", "North Indian", "South Indian", "Gujarati", "Punjabi", "Marathi", "Bengali"];
     const baseNames = ["Veg Curry", "Dal", "Sabji", "Pulao", "Roti", "Snack", "Chutney", "Raita"];
     
-    const randomBase = baseNames[Math.floor(Math.random() * baseNames.length)];
-    const randomSuffix = suffixes[Math.floor(Math.random() * suffixes.length)];
-    const randomPrefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+    const randomPrefix = prefixes[i % prefixes.length];
+    const randomBase = baseNames[(i * 3) % baseNames.length];
+    const randomSuffix = suffixes[(i * 7) % suffixes.length];
+    
+    // Deterministic macros based on baseName and index
+    const baseCal = 100 + (i % 300);
+    const baseProt = 2 + (i % 20);
+    const baseCarb = 10 + (i % 50);
+    const baseFat = 1 + (i % 15);
     
     return {
       id: id,
       name: `${randomPrefix} ${randomBase} ${randomSuffix} (Var. ${id})`,
-      calories: 50 + Math.floor(Math.random() * 450),
-      protein: 1 + Math.floor(Math.random() * 30),
-      carbs: 5 + Math.floor(Math.random() * 70),
-      fats: 0 + Math.floor(Math.random() * 35),
+      calories: baseCal,
+      protein: baseProt,
+      carbs: baseCarb,
+      fats: baseFat,
       category: category
     };
   })
