@@ -631,4 +631,5 @@ function MacroDetailCard({ label, current, target, unit, color }: any) {
         />
       </div>
     </div>
+  )
 }
