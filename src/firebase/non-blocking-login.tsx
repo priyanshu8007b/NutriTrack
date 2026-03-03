@@ -47,10 +47,11 @@ export function initiateGoogleSignIn(authInstance: Auth, onLoadingChange?: (load
       
       if (error.code === 'auth/operation-not-allowed') {
         alert("Google authentication is not enabled in the Firebase Console. \n\n1. Go to Authentication > Sign-in method.\n2. Click 'Add new provider'.\n3. Select Google and click 'Enable'.");
+      } else if (error.code === 'auth/unauthorized-domain') {
+        const domain = window.location.hostname;
+        alert(`This domain (${domain}) is not authorized for Google Sign-in. \n\n1. Go to Authentication > Settings > Authorized domains.\n2. Click 'Add domain' and add: ${domain}`);
       } else if (error.code === 'auth/popup-blocked') {
         alert("The sign-in popup was blocked by your browser. Please allow popups for this site and try again.");
-      } else if (error.code === 'auth/unauthorized-domain') {
-        alert("This domain is not authorized for Google Sign-in. \n\n1. Go to Authentication > Settings > Authorized domains.\n2. Add this domain to the list.");
       } else if (error.code === 'auth/cancelled-popup-request' || error.code === 'auth/popup-closed-by-user') {
         // User closed the popup, no need for an alert
       } else {
