@@ -19,7 +19,8 @@ import {
   AlertCircle,
   ChevronRight,
   ChevronLeft,
-  X
+  X,
+  Zap
 } from "lucide-react"
 import { INDIAN_FOOD_DATABASE, FoodItem } from "@/lib/mock-data"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
@@ -120,7 +121,7 @@ export default function LogMealPage() {
     if (selectedCategory === "Snacks") return matchesSearch && (food.category === "Snack" || food.category === "Beverage")
     const isMainMeal = ["Main Course", "Lentils", "Rice", "Bread", "Side Dish"].includes(food.category)
     return matchesSearch && isMainMeal
-  }).slice(0, 50) // Limit display for performance
+  }).slice(0, 50) 
 
   const handleStartPick = (food: FoodItem) => {
     setItemToPick(food)
@@ -136,6 +137,12 @@ export default function LogMealPage() {
       }
       return [...prev, { food: itemToPick, quantity: pickQuantity }]
     })
+    
+    toast({
+      title: "Added to Plate",
+      description: `${itemToPick.name} (${pickQuantity} servings) added.`,
+    })
+    
     setItemToPick(null)
   }
 
@@ -178,7 +185,7 @@ export default function LogMealPage() {
 
     toast({
       title: "Meal Logged",
-      description: `Successfully added ${selectedItems.length} items to your daily records.`,
+      description: `Successfully added ${selectedItems.length} items to your records.`,
     })
     setSelectedItems([])
   }
@@ -195,7 +202,7 @@ export default function LogMealPage() {
 
         <button 
           onClick={() => setIsDailyDetailOpen(true)}
-          className="group text-left bg-card border border-border/50 rounded-2xl p-4 flex items-center gap-4 shadow-sm hover:border-primary/50 transition-all active:scale-95"
+          className="group text-left bg-card border border-border/50 rounded-2xl p-4 flex items-center gap-4 shadow-sm hover:border-primary/50 transition-all active:scale-[0.98]"
         >
           <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
             <Target className="w-6 h-6 text-primary group-hover:text-white" />
@@ -232,7 +239,7 @@ export default function LogMealPage() {
                     variant={selectedCategory === cat ? "default" : "outline"}
                     size="sm"
                     className={cn(
-                      "rounded-full px-4 h-9 font-bold transition-all",
+                      "rounded-full px-4 h-9 font-bold transition-all active:scale-95",
                       selectedCategory === cat ? "shadow-md" : "border-border/50 hover:bg-primary/5 text-muted-foreground hover:text-primary"
                     )}
                     onClick={() => setSelectedCategory(cat)}
@@ -257,7 +264,7 @@ export default function LogMealPage() {
                             "w-2 h-2 rounded-full",
                             food.isVeg ? "bg-green-600" : "bg-red-600"
                           )} />
-                          <span className="font-bold text-foreground text-sm md:text-base leading-tight">{food.name}</span>
+                          <span className="font-bold text-foreground text-sm md:text-base leading-tight group-hover:text-primary transition-colors">{food.name}</span>
                         </div>
                         <div className="flex flex-wrap gap-x-3 gap-y-1 items-center mt-1">
                           <Badge variant="outline" className="text-[8px] md:text-[9px] uppercase font-black tracking-widest py-0 px-2 bg-secondary/50 border-none">
@@ -268,7 +275,7 @@ export default function LogMealPage() {
                           </span>
                         </div>
                       </div>
-                      <Button variant="secondary" size="icon" className="shrink-0 h-10 w-10 group-hover:bg-primary group-hover:text-primary-foreground rounded-full shadow-sm transition-colors">
+                      <Button variant="secondary" size="icon" className="shrink-0 h-10 w-10 group-hover:bg-primary group-hover:text-primary-foreground rounded-full shadow-sm transition-all active:scale-90">
                         <Plus className="w-5 h-5" />
                       </Button>
                     </div>
@@ -290,7 +297,7 @@ export default function LogMealPage() {
                   </div>
                   New Meal
                 </CardTitle>
-                <Badge className="bg-primary text-primary-foreground font-black px-3 py-1">
+                <Badge className="bg-primary text-primary-foreground font-black px-3 py-1 animate-in zoom-in duration-300">
                   {selectedItems.length} {selectedItems.length === 1 ? 'Item' : 'Items'}
                 </Badge>
               </div>
@@ -301,7 +308,7 @@ export default function LogMealPage() {
                   <ScrollArea className="max-h-[300px] pr-2">
                     <div className="space-y-4">
                       {selectedItems.map((item) => (
-                        <div key={item.food.id} className="flex flex-col gap-3 group">
+                        <div key={item.food.id} className="flex flex-col gap-3 group animate-in slide-in-from-right-4 duration-300">
                           <div className="flex items-center justify-between">
                             <div className="flex flex-col gap-0.5">
                               <span className="font-bold text-sm truncate max-w-[150px] md:max-w-[200px] leading-tight">{item.food.name}</span>
@@ -313,11 +320,11 @@ export default function LogMealPage() {
                             </div>
                             <div className="flex items-center gap-1.5">
                               <div className="flex items-center bg-secondary/30 rounded-lg p-1">
-                                <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md hover:bg-white/50" onClick={() => handleUpdateQuantity(item.food.id, -0.5)}>-</Button>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md hover:bg-white/50 active:scale-90" onClick={() => handleUpdateQuantity(item.food.id, -0.5)}>-</Button>
                                 <span className="w-8 text-center font-black text-xs">{item.quantity}</span>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md hover:bg-white/50" onClick={() => handleUpdateQuantity(item.food.id, 0.5)}>+</Button>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md hover:bg-white/50 active:scale-90" onClick={() => handleUpdateQuantity(item.food.id, 0.5)}>+</Button>
                               </div>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10 rounded-full" onClick={() => handleRemoveItem(item.food.id)}>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10 rounded-full active:scale-90" onClick={() => handleRemoveItem(item.food.id)}>
                                 <Trash2 className="w-4 h-4" />
                               </Button>
                             </div>
@@ -328,7 +335,7 @@ export default function LogMealPage() {
                     </div>
                   </ScrollArea>
 
-                  <div className="bg-primary/5 p-5 rounded-2xl border border-primary/10 space-y-2">
+                  <div className="bg-primary/5 p-5 rounded-2xl border border-primary/10 space-y-2 transition-all">
                     <div className="flex items-center justify-between">
                       <span className="text-muted-foreground font-bold text-[10px] uppercase tracking-widest">Plate Calories</span>
                       <span className="text-2xl font-black text-primary">{Math.round(currentPlateTotals.calories)} <span className="text-[10px] uppercase">kcal</span></span>
@@ -352,7 +359,7 @@ export default function LogMealPage() {
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground space-y-4">
                   <div className="w-16 h-16 rounded-full bg-secondary/50 flex items-center justify-center">
-                    <Plus className="w-8 h-8 opacity-10" />
+                    <UtensilsCrossed className="w-8 h-8 opacity-10" />
                   </div>
                   <p className="font-bold text-sm">Select items to build your meal</p>
                 </div>
@@ -373,7 +380,7 @@ export default function LogMealPage() {
 
       {/* Serving Picker Dialog */}
       <Dialog open={!!itemToPick} onOpenChange={(open) => !open && setItemToPick(null)}>
-        <DialogContent className="sm:max-w-[400px] rounded-[2rem]">
+        <DialogContent className="sm:max-w-[400px] max-[400px]:w-[95%] rounded-[2rem] animate-in zoom-in-95 duration-200">
           <DialogHeader>
             <DialogTitle className="text-2xl font-black text-foreground">{itemToPick?.name}</DialogTitle>
             <DialogDescription className="font-medium">
@@ -385,7 +392,7 @@ export default function LogMealPage() {
               <Button 
                 variant="outline" 
                 size="icon" 
-                className="h-16 w-16 rounded-3xl border-2 hover:bg-secondary/20"
+                className="h-16 w-16 rounded-3xl border-2 hover:bg-secondary/20 active:scale-90 transition-transform"
                 onClick={() => setPickQuantity(prev => Math.max(0.5, prev - 0.5))}
               >
                 <ChevronLeft className="w-8 h-8" />
@@ -397,7 +404,7 @@ export default function LogMealPage() {
               <Button 
                 variant="outline" 
                 size="icon" 
-                className="h-16 w-16 rounded-3xl border-2 hover:bg-secondary/20"
+                className="h-16 w-16 rounded-3xl border-2 hover:bg-secondary/20 active:scale-90 transition-transform"
                 onClick={() => setPickQuantity(prev => prev + 0.5)}
               >
                 <ChevronRight className="w-8 h-8" />
@@ -418,7 +425,10 @@ export default function LogMealPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button className="w-full h-14 rounded-2xl font-black text-lg" onClick={handleConfirmPick}>
+            <Button 
+              className="w-full h-14 rounded-2xl font-black text-lg shadow-lg shadow-primary/20 transition-all active:scale-[0.97]" 
+              onClick={handleConfirmPick}
+            >
               Add to Plate
             </Button>
           </DialogFooter>
@@ -480,7 +490,7 @@ export default function LogMealPage() {
                     {todayLogs.slice().reverse().map((log) => {
                       const food = INDIAN_FOOD_DATABASE.find(f => f.id.toString() === log.foodId)
                       return (
-                        <div key={log.id} className="flex items-center justify-between p-4 bg-secondary/10 rounded-2xl border border-border/50">
+                        <div key={log.id} className="flex items-center justify-between p-4 bg-secondary/10 rounded-2xl border border-border/50 animate-in slide-in-from-bottom-2 duration-300">
                           <div className="flex flex-col">
                             <span className="font-bold text-sm">{food?.name || "Unknown Dish"}</span>
                             <span className="text-[10px] text-muted-foreground font-black uppercase tracking-tighter">
@@ -505,7 +515,7 @@ export default function LogMealPage() {
           </ScrollArea>
           
           <div className="p-6 bg-secondary/20 border-t border-border/50 flex justify-end">
-            <Button variant="ghost" className="font-bold" onClick={() => setIsDailyDetailOpen(false)}>Close Summary</Button>
+            <Button variant="ghost" className="font-bold active:scale-95" onClick={() => setIsDailyDetailOpen(false)}>Close Summary</Button>
           </div>
         </DialogContent>
       </Dialog>
