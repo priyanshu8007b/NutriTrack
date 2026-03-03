@@ -91,8 +91,8 @@ export default function SuggestionsPage() {
       return
     }
 
+    setResult(null) // Reset result to show loading state immediately
     setLoading(true)
-    setResult(null) // Reset result to show loading state
     
     try {
       const output = await smartIndianMealSuggestion({

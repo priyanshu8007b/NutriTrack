@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A GenAI tool for suggesting culturally relevant Indian dishes or meal combinations to meet remaining daily macro targets.
@@ -50,17 +49,26 @@ export type SmartIndianMealSuggestionOutput = z.infer<typeof SmartIndianMealSugg
 
 export async function smartIndianMealSuggestion(input: SmartIndianMealSuggestionInput): Promise<SmartIndianMealSuggestionOutput> {
   try {
-    if (!process.env.GOOGLE_GENAI_API_KEY || process.env.GOOGLE_GENAI_API_KEY === 'YOUR_API_KEY_HERE') {
-      throw new Error("GOOGLE_GENAI_API_KEY is missing. Please add it to your .env file or Vercel Environment Variables.");
+    // Check for API key existence (common issue in production)
+    const apiKey = process.env.GOOGLE_GENAI_API_KEY || process.env.GOOGLE_API_KEY;
+    if (!apiKey || apiKey === 'YOUR_API_KEY_HERE') {
+      throw new Error("API Key is missing. Please add GOOGLE_GENAI_API_KEY to your Vercel Environment Variables.");
     }
+    
     return await smartIndianMealSuggestionFlow(input);
   } catch (error: any) {
-    console.error("AI Flow Error:", error);
-    const message = error.message || "";
+    console.error("AI Flow Execution Error:", error);
+    const message = error.message || "Unknown error";
+    
     if (message.includes('API_KEY_INVALID') || message.includes('403') || message.includes('401')) {
       throw new Error("Your Google AI API Key is invalid. Please get a fresh key from https://aistudio.google.com/app/apikey");
     }
-    throw new Error(error.message || "The AI nutritionist is currently offline. Please check your API key and try again.");
+    
+    if (message.includes('quota') || message.includes('429')) {
+      throw new Error("AI service quota exceeded. Please try again in a moment.");
+    }
+
+    throw new Error(message || "The AI nutritionist encountered an issue. Please check your data and try again.");
   }
 }
 
@@ -85,7 +93,7 @@ const prompt = ai.definePrompt({
   prompt: `
 DIETARY PREFERENCE:
 {{#if input.isVegOnly}}
-- VEGETARIAN ONLY.
+- VEGETARIAN ONLY. (No meat, fish, or eggs).
 {{else}}
 - ANY (Veg or Non-Veg).
 {{/if}}
@@ -99,9 +107,10 @@ CURRENT MEAL CONTEXT:
   - Fats: {{{remaining.fats}}}g
 
 INSTRUCTIONS:
-1. Suggest 2-3 authentic Indian options.
-2. If remaining calories are low (<200), suggest light options like "Buttermilk (Chaas)" or "Spiced Sprouted Salad".
-3. Return the exact 'remainingMacros' provided in the context.`,
+1. Suggest 2-3 authentic Indian options that fit these remaining macros.
+2. If remaining calories are low (<200), suggest light options like "Chaas", "Spiced Sprouts", or "Roasted Makhana".
+3. If remaining macros are negative (user over-limit), suggest extremely light, detoxifying options like "Warm Lemon Water with Ginger" or "Tulsi Tea" and explain they've met their goals.
+4. Return the exact 'remainingMacros' provided in the context.`,
 });
 
 const smartIndianMealSuggestionFlow = ai.defineFlow(
@@ -111,7 +120,7 @@ const smartIndianMealSuggestionFlow = ai.defineFlow(
     outputSchema: SmartIndianMealSuggestionOutputSchema,
   },
   async (input) => {
-    // Precise calculation
+    // Precise calculation of remaining macros
     const remaining = {
       calories: Math.round(Math.max(0, input.dailyCalorieGoal - input.consumedCalories)),
       protein: Math.round(Math.max(0, input.dailyProteinGoal - input.consumedProtein)),
@@ -119,15 +128,15 @@ const smartIndianMealSuggestionFlow = ai.defineFlow(
       fats: Math.round(Math.max(0, input.dailyFatGoal - input.consumedFats)),
     };
 
-    const {output} = await prompt({
+    const result = await prompt({
       input,
       remaining,
     });
     
-    if (!output || !output.mealSuggestions) {
-      throw new Error("The AI failed to generate specific meal suggestions. Please try adjusting your meal type.");
+    if (!result || !result.output) {
+      throw new Error("The AI failed to generate a response. Please try adjusting your meal type.");
     }
 
-    return output;
+    return result.output;
   }
 );
