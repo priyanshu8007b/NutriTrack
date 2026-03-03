@@ -1,7 +1,8 @@
+
 "use client"
 
 import * as React from "react"
-import { Search, Plus, Trash2, Clock, Calculator, Info, UtensilsCrossed } from "lucide-react"
+import { Search, Plus, Trash2, Clock, Calculator, Info, UtensilsCrossed, Filter } from "lucide-react"
 import { INDIAN_FOOD_DATABASE, FoodItem } from "@/lib/mock-data"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -10,15 +11,38 @@ import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
+import { cn } from "@/lib/utils"
+
+type MealCategory = "All" | "Breakfast" | "Lunch" | "Snacks" | "Dinner"
 
 export default function LogMealPage() {
   const [search, setSearch] = React.useState("")
+  const [selectedCategory, setSelectedCategory] = React.useState<MealCategory>("All")
   const [selectedItems, setSelectedItems] = React.useState<{ food: FoodItem, quantity: number }[]>([])
   const { toast } = useToast()
 
-  const filteredFoods = INDIAN_FOOD_DATABASE.filter(food => 
-    food.name.toLowerCase().includes(search.toLowerCase())
-  )
+  const filteredFoods = INDIAN_FOOD_DATABASE.filter(food => {
+    const matchesSearch = food.name.toLowerCase().includes(search.toLowerCase())
+    
+    // Mapping internal database categories to UI filters
+    if (selectedCategory === "All") return matchesSearch
+    
+    if (selectedCategory === "Breakfast") {
+      return matchesSearch && food.category === "Breakfast"
+    }
+    
+    if (selectedCategory === "Snacks") {
+      return matchesSearch && (food.category === "Snack" || food.category === "Beverage")
+    }
+    
+    // Lunch and Dinner usually share these main components in the mock database
+    const isMainMeal = ["Main Course", "Lentils", "Rice", "Bread", "Side Dish"].includes(food.category)
+    if (selectedCategory === "Lunch" || selectedCategory === "Dinner") {
+      return matchesSearch && isMainMeal
+    }
+    
+    return matchesSearch
+  })
 
   const handleAddItem = (food: FoodItem) => {
     setSelectedItems(prev => {
@@ -61,17 +85,19 @@ export default function LogMealPage() {
     setSelectedItems([])
   }
 
+  const categories: MealCategory[] = ["All", "Breakfast", "Lunch", "Snacks", "Dinner"]
+
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">Log Indian Meal</h1>
-        <p className="text-muted-foreground mt-1">Search our database or add custom items to your daily intake.</p>
+    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
+      <header>
+        <h1 className="text-4xl font-black tracking-tight text-foreground">Log Indian Meal</h1>
+        <p className="text-muted-foreground mt-2 text-lg">Search our database or add custom items to your daily intake.</p>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         <div className="lg:col-span-7 space-y-6">
           <Card className="shadow-sm border-border/50">
-            <CardHeader className="pb-3">
+            <CardHeader className="space-y-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input 
@@ -81,6 +107,23 @@ export default function LogMealPage() {
                   onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
+              
+              <div className="flex flex-wrap gap-2">
+                {categories.map((cat) => (
+                  <Button
+                    key={cat}
+                    variant={selectedCategory === cat ? "default" : "outline"}
+                    size="sm"
+                    className={cn(
+                      "rounded-full px-4 h-9 font-bold transition-all",
+                      selectedCategory === cat ? "shadow-md" : "border-border/50 hover:bg-primary/5 text-muted-foreground hover:text-primary"
+                    )}
+                    onClick={() => setSelectedCategory(cat)}
+                  >
+                    {cat}
+                  </Button>
+                ))}
+              </div>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[500px] pr-4">
@@ -88,26 +131,29 @@ export default function LogMealPage() {
                   {filteredFoods.map((food) => (
                     <div 
                       key={food.id} 
-                      className="group flex items-center justify-between p-4 rounded-xl border border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer"
+                      className="group flex items-center justify-between p-4 rounded-xl border border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer bg-card/50"
                       onClick={() => handleAddItem(food)}
                     >
                       <div className="flex flex-col">
-                        <span className="font-bold text-foreground">{food.name}</span>
+                        <span className="font-bold text-foreground text-base">{food.name}</span>
                         <div className="flex gap-2 items-center mt-1">
-                          <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider py-0 px-2 bg-secondary/50">
+                          <Badge variant="outline" className="text-[9px] uppercase font-black tracking-widest py-0 px-2 bg-secondary/50 border-none">
                             {food.category}
                           </Badge>
-                          <span className="text-xs text-muted-foreground">{food.calories} kcal per serving</span>
+                          <span className="text-xs text-muted-foreground font-medium">{food.calories} kcal per serving</span>
                         </div>
                       </div>
-                      <Button variant="ghost" size="icon" className="group-hover:bg-primary group-hover:text-primary-foreground rounded-full">
-                        <Plus className="w-4 h-4" />
+                      <Button variant="secondary" size="icon" className="group-hover:bg-primary group-hover:text-primary-foreground rounded-full shadow-sm transition-colors">
+                        <Plus className="w-5 h-5" />
                       </Button>
                     </div>
                   ))}
                   {filteredFoods.length === 0 && (
-                    <div className="text-center py-12">
-                      <p className="text-muted-foreground">No dishes found matching your search.</p>
+                    <div className="flex flex-col items-center justify-center py-20 text-center space-y-3">
+                      <div className="w-12 h-12 rounded-full bg-secondary/50 flex items-center justify-center">
+                        <Filter className="w-6 h-6 text-muted-foreground opacity-20" />
+                      </div>
+                      <p className="text-muted-foreground font-medium">No dishes found matching your criteria.</p>
                     </div>
                   )}
                 </div>
@@ -117,116 +163,125 @@ export default function LogMealPage() {
         </div>
 
         <div className="lg:col-span-5 space-y-6">
-          <Card className="shadow-lg border-primary/20 sticky top-8">
-            <CardHeader className="border-b border-border/50 bg-secondary/10">
+          <Card className="shadow-xl border-primary/20 sticky top-8 bg-card/50 backdrop-blur-sm overflow-hidden">
+            <CardHeader className="border-b border-border/50 bg-secondary/10 py-6">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-xl font-bold flex items-center gap-2">
-                  <Calculator className="w-5 h-5 text-primary" />
+                <CardTitle className="text-xl font-black flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Calculator className="w-6 h-6 text-primary" />
+                  </div>
                   Meal Summary
                 </CardTitle>
-                <Badge className="bg-primary text-primary-foreground">
-                  {selectedItems.length} Items
+                <Badge className="bg-primary text-primary-foreground font-black px-3 py-1">
+                  {selectedItems.length} {selectedItems.length === 1 ? 'Item' : 'Items'}
                 </Badge>
               </div>
             </CardHeader>
             <CardContent className="pt-6">
               {selectedItems.length > 0 ? (
                 <div className="space-y-6">
-                  <ScrollArea className="max-h-[300px] pr-4">
+                  <ScrollArea className="max-h-[350px] pr-4">
                     <div className="space-y-4">
                       {selectedItems.map((item) => (
-                        <div key={item.food.id} className="flex flex-col gap-2">
+                        <div key={item.food.id} className="flex flex-col gap-3 group">
                           <div className="flex items-center justify-between">
-                            <span className="font-bold text-sm truncate max-w-[200px]">{item.food.name}</span>
-                            <div className="flex items-center gap-1">
-                              <Button 
-                                variant="outline" 
-                                size="icon" 
-                                className="h-7 w-7 rounded-md"
-                                onClick={() => handleUpdateQuantity(item.food.id, -0.5)}
-                              >
-                                -
-                              </Button>
-                              <span className="w-10 text-center font-bold text-sm">{item.quantity}</span>
-                              <Button 
-                                variant="outline" 
-                                size="icon" 
-                                className="h-7 w-7 rounded-md"
-                                onClick={() => handleUpdateQuantity(item.food.id, 0.5)}
-                              >
-                                +
-                              </Button>
+                            <div className="flex flex-col gap-0.5">
+                              <span className="font-bold text-sm truncate max-w-[200px] leading-tight">{item.food.name}</span>
+                              <div className="flex gap-2 text-[10px] text-muted-foreground uppercase font-black tracking-tighter">
+                                <span>{(item.food.calories * item.quantity).toFixed(0)} kcal</span>
+                                <span>•</span>
+                                <span>{(item.food.protein * item.quantity).toFixed(1)}g Protein</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <div className="flex items-center bg-secondary/30 rounded-lg p-1">
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-7 w-7 rounded-md hover:bg-white/50"
+                                  onClick={() => handleUpdateQuantity(item.food.id, -0.5)}
+                                >
+                                  -
+                                </Button>
+                                <span className="w-9 text-center font-black text-sm">{item.quantity}</span>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-7 w-7 rounded-md hover:bg-white/50"
+                                  onClick={() => handleUpdateQuantity(item.food.id, 0.5)}
+                                >
+                                  +
+                                </Button>
+                              </div>
                               <Button 
                                 variant="ghost" 
                                 size="icon" 
-                                className="h-7 w-7 text-destructive hover:bg-destructive/10 ml-2"
+                                className="h-8 w-8 text-destructive hover:bg-destructive/10 rounded-full"
                                 onClick={() => handleRemoveItem(item.food.id)}
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>
                             </div>
                           </div>
-                          <div className="flex gap-3 text-[10px] text-muted-foreground uppercase font-bold tracking-tight">
-                            <span>{(item.food.calories * item.quantity).toFixed(0)} kcal</span>
-                            <span>{(item.food.protein * item.quantity).toFixed(1)}g Protein</span>
-                          </div>
-                          <Separator className="mt-2" />
+                          <Separator className="bg-border/30" />
                         </div>
                       ))}
                     </div>
                   </ScrollArea>
 
-                  <div className="bg-secondary/20 p-6 rounded-2xl space-y-4">
+                  <div className="bg-primary/5 p-6 rounded-[2rem] border border-primary/10 space-y-6">
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground font-medium">Total Calories</span>
-                      <span className="text-2xl font-black text-primary">{totals.calories.toFixed(0)} kcal</span>
+                      <span className="text-muted-foreground font-bold text-sm uppercase tracking-widest">Total Energy</span>
+                      <span className="text-3xl font-black text-primary">{totals.calories.toFixed(0)} <span className="text-xs uppercase">kcal</span></span>
                     </div>
-                    <div className="grid grid-cols-3 gap-2 pt-2">
-                      <div className="bg-card p-3 rounded-xl border border-border/50 text-center">
-                        <span className="block text-xs text-muted-foreground uppercase font-bold mb-1">Protein</span>
-                        <span className="font-black text-accent">{totals.protein.toFixed(1)}g</span>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="bg-white/50 p-3 rounded-2xl border border-border/50 text-center">
+                        <span className="block text-[9px] text-muted-foreground uppercase font-black mb-1 tracking-widest">Protein</span>
+                        <span className="font-black text-accent text-sm">{totals.protein.toFixed(1)}g</span>
                       </div>
-                      <div className="bg-card p-3 rounded-xl border border-border/50 text-center">
-                        <span className="block text-xs text-muted-foreground uppercase font-bold mb-1">Carbs</span>
-                        <span className="font-black text-foreground">{totals.carbs.toFixed(1)}g</span>
+                      <div className="bg-white/50 p-3 rounded-2xl border border-border/50 text-center">
+                        <span className="block text-[9px] text-muted-foreground uppercase font-black mb-1 tracking-widest">Carbs</span>
+                        <span className="font-black text-foreground text-sm">{totals.carbs.toFixed(1)}g</span>
                       </div>
-                      <div className="bg-card p-3 rounded-xl border border-border/50 text-center">
-                        <span className="block text-xs text-muted-foreground uppercase font-bold mb-1">Fats</span>
-                        <span className="font-black text-foreground">{totals.fats.toFixed(1)}g</span>
+                      <div className="bg-white/50 p-3 rounded-2xl border border-border/50 text-center">
+                        <span className="block text-[9px] text-muted-foreground uppercase font-black mb-1 tracking-widest">Fats</span>
+                        <span className="font-black text-foreground text-sm">{totals.fats.toFixed(1)}g</span>
                       </div>
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground space-y-4">
-                  <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center">
-                    <UtensilsCrossed className="w-8 h-8 opacity-20" />
+                <div className="flex flex-col items-center justify-center py-20 text-center text-muted-foreground space-y-6">
+                  <div className="w-20 h-20 rounded-full bg-secondary/50 flex items-center justify-center">
+                    <UtensilsCrossed className="w-10 h-10 opacity-10" />
                   </div>
-                  <div>
-                    <p className="font-semibold">Your plate is empty</p>
-                    <p className="text-xs">Add items from the database to start logging.</p>
+                  <div className="space-y-1">
+                    <p className="font-black text-lg text-foreground">Your plate is empty</p>
+                    <p className="text-sm font-medium">Add items from the database to start logging your meal.</p>
                   </div>
                 </div>
               )}
             </CardContent>
-            <CardFooter className="flex gap-3 border-t border-border/50 pt-6">
+            <CardFooter className="flex gap-3 border-t border-border/50 pt-6 px-6 pb-6">
               <Button 
-                className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-12"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-black h-14 rounded-2xl text-lg shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
                 disabled={selectedItems.length === 0}
                 onClick={handleSave}
               >
-                Save Meal Log
+                Log This Meal
               </Button>
             </CardFooter>
           </Card>
 
-          <Card className="bg-accent/5 border-accent/20">
+          <Card className="bg-accent/5 border-accent/20 rounded-[2rem]">
             <CardContent className="p-6 flex gap-4">
-              <Info className="w-5 h-5 text-accent shrink-0" />
-              <div className="text-sm">
-                <p className="font-bold text-accent">Pro Tip</p>
-                <p className="text-muted-foreground leading-snug mt-1">
-                  Indian meals often have higher carbs. Try adding protein-rich sides like Curd or Dal to balance your macros.
+              <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
+                <Info className="w-5 h-5 text-accent" />
+              </div>
+              <div className="text-sm space-y-1">
+                <p className="font-black text-accent uppercase tracking-widest text-xs">Nutritional Advice</p>
+                <p className="text-muted-foreground font-medium leading-relaxed">
+                  Indian meals often have higher carbs. Try adding protein-rich sides like <span className="text-foreground font-bold">Curd</span> or <span className="text-foreground font-bold">Dal</span> to balance your macros.
                 </p>
               </div>
             </CardContent>
