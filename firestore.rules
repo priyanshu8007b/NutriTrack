@@ -13,20 +13,9 @@ service cloud.firestore {
      * Data Structure:
      * - /userProfiles/{userId}: Root for user identity.
      * - /userProfiles/{userId}/mealLogs/{mealLogId}: User-specific private meal history.
-     * - /userProfiles/{userId}/userGoal: User-specific nutritional targets (singleton).
+     * - /userProfiles/{userId}/userGoal/{goalId}: User-specific nutritional targets (singleton).
      * - /foodItems/{foodItemId}: Global public catalog of nutritional data.
      * - /roles_admin/{uid}: Internal collection to designate administrative users.
-     * 
-     * Key Security Decisions:
-     * - Ownership: Access to /userProfiles and its subcollections is strictly limited to the 
-     *   authenticated user matching the {userId} wildcard.
-     * - Admin Privileges: Write access to the global /foodItems catalog requires the user's 
-     *   UID to exist in the /roles_admin collection.
-     * - Denormalization for Authorization: User IDs are stored within documents (e.g., mealLogs) 
-     *   to ensure that even if the path is compromised, the internal data must still align 
-     *   with the authenticated session.
-     * - Prototyping Flexibility: While authorization is strictly enforced, specific data 
-     *   field types (strings, numbers, etc.) are not validated to allow for rapid UI iteration.
      */
 
     // --- Global Helper Functions ---
@@ -55,10 +44,6 @@ service cloud.firestore {
 
     /**
      * @description Rules for user profile documents. Users manage their own identity.
-     * @path /userProfiles/{userId}
-     * @allow Authenticated user (create) where request.auth.uid == userId.
-     * @deny Any user attempting to read or write a profile that isn't their own.
-     * @principle Path-based ownership and relational integrity validation.
      */
     match /userProfiles/{userId} {
       allow get, list: if isOwner(userId);
@@ -68,10 +53,6 @@ service cloud.firestore {
 
       /**
        * @description Rules for a user's private meal logs.
-       * @path /userProfiles/{userId}/mealLogs/{mealLogId}
-       * @allow Owner (list) their own logs for history views.
-       * @deny Unauthenticated access or cross-user data scraping.
-       * @principle Subcollection isolation.
        */
       match /mealLogs/{mealLogId} {
         allow get, list: if isOwner(userId);
@@ -81,13 +62,10 @@ service cloud.firestore {
       }
 
       /**
-       * @description Rules for a user's nutritional goals (singleton).
-       * @path /userProfiles/{userId}/userGoal
-       * @allow Owner (update) to change their daily targets.
-       * @deny Public reading of personal health goals.
-       * @principle Singleton ownership.
+       * @description Rules for a user's nutritional goals (subcollection singleton).
+       * @path /userProfiles/{userId}/userGoal/{goalId}
        */
-      match /userGoal {
+      match /userGoal/{goalId} {
         allow get, list: if isOwner(userId);
         allow create: if isOwner(userId) && request.resource.data.userId == userId;
         allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
@@ -97,10 +75,6 @@ service cloud.firestore {
 
     /**
      * @description Global master list of food items and their macros.
-     * @path /foodItems/{foodItemId}
-     * @allow Any user (get, list) to support searching and logging meals.
-     * @deny Non-admin users from modifying the master food database.
-     * @principle Public Read with Owner-Only (Admin) Writes.
      */
     match /foodItems/{foodItemId} {
       allow get, list: if true;
@@ -109,15 +83,10 @@ service cloud.firestore {
 
     /**
      * @description Administrative roles collection (DBAC).
-     * @path /roles_admin/{uid}
-     * @allow Authenticated users (get) to check their own admin status.
-     * @deny Direct client-side creation of admin roles.
-     * @principle Role-based access control.
      */
     match /roles_admin/{uid} {
       allow get: if isSignedIn();
       allow list: if isAdmin();
-      // Admins are typically provisioned via Admin SDK or Console for security
       allow create, update, delete: if false; 
     }
   }

@@ -1,8 +1,7 @@
-
 "use client"
 
 import * as React from "react"
-import { Target, Save, Info, RefreshCcw, Calculator as CalcIcon, ChevronRight } from "lucide-react"
+import { Target, Save, RefreshCcw, Calculator as CalcIcon, ChevronRight, Info } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -11,11 +10,24 @@ import { DEFAULT_GOALS } from "@/lib/mock-data"
 import { useToast } from "@/hooks/use-toast"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { cn } from "@/lib/utils"
+import { 
+  useUser, 
+  useFirestore, 
+  useDoc, 
+  useMemoFirebase,
+  setDocumentNonBlocking 
+} from "@/firebase"
+import { doc } from "firebase/firestore"
+import { useRouter } from "next/navigation"
 
 export default function GoalsPage() {
-  const [goals, setGoals] = React.useState(DEFAULT_GOALS)
+  const { user, isUserLoading } = useUser()
+  const db = useFirestore()
   const { toast } = useToast()
+  const router = useRouter()
+
+  const [goals, setGoals] = React.useState(DEFAULT_GOALS)
+  const [hasCalculated, setHasCalculated] = React.useState(false)
 
   // Calculator State
   const [metrics, setMetrics] = React.useState({
@@ -26,12 +38,55 @@ export default function GoalsPage() {
     activity: "1.2"
   })
 
-  const [hasCalculated, setHasCalculated] = React.useState(false)
+  // --- Firestore Sync ---
+  
+  const userGoalRef = useMemoFirebase(() => {
+    if (!db || !user?.uid) return null
+    return doc(db, "userProfiles", user.uid, "userGoal", "userGoal")
+  }, [db, user?.uid])
+
+  const { data: remoteGoal, isLoading: isGoalLoading } = useDoc(userGoalRef)
+
+  // Initialize from Firestore if data exists
+  React.useEffect(() => {
+    if (remoteGoal) {
+      setGoals({
+        calories: remoteGoal.targetCalories,
+        protein: Math.round(remoteGoal.targetCalories * remoteGoal.targetProteinRatio / 4),
+        carbs: Math.round(remoteGoal.targetCalories * remoteGoal.targetCarbsRatio / 4),
+        fats: Math.round(remoteGoal.targetCalories * remoteGoal.targetFatsRatio / 9),
+      })
+      setHasCalculated(true)
+    }
+  }, [remoteGoal])
+
+  React.useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push("/login")
+    }
+  }, [user, isUserLoading, router])
 
   const handleSave = () => {
+    if (!user || !db) return
+
+    const totalCaloriesFromMacros = (goals.protein * 4) + (goals.carbs * 4) + (goals.fats * 9)
+    
+    const goalData = {
+      id: "userGoal",
+      userId: user.uid,
+      targetCalories: goals.calories,
+      targetProteinRatio: (goals.protein * 4) / totalCaloriesFromMacros,
+      targetCarbsRatio: (goals.carbs * 4) / totalCaloriesFromMacros,
+      targetFatsRatio: (goals.fats * 9) / totalCaloriesFromMacros,
+      updatedAt: new Date().toISOString()
+    }
+
+    const docRef = doc(db, "userProfiles", user.uid, "userGoal", "userGoal")
+    setDocumentNonBlocking(docRef, goalData, { merge: true })
+
     toast({
-      title: "Goals Updated",
-      description: "Your new nutritional targets have been saved successfully.",
+      title: "Goals Saved",
+      description: "Your nutritional targets have been synced to your profile.",
     })
   }
 
@@ -84,14 +139,21 @@ export default function GoalsPage() {
     })
   }
 
-  // Energy Breakdown Calculation
   const totalCaloriesFromMacros = (goals.protein * 4) + (goals.carbs * 4) + (goals.fats * 9)
   const proteinPercent = totalCaloriesFromMacros > 0 ? ((goals.protein * 4) / totalCaloriesFromMacros) * 100 : 0
   const carbsPercent = totalCaloriesFromMacros > 0 ? ((goals.carbs * 4) / totalCaloriesFromMacros) * 100 : 0
   const fatsPercent = totalCaloriesFromMacros > 0 ? ((goals.fats * 9) / totalCaloriesFromMacros) * 100 : 0
 
+  if (isUserLoading || isGoalLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary" />
+      </div>
+    )
+  }
+
   return (
-    <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-8">
+    <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-4xl font-black tracking-tight text-foreground">Nutritional Goals</h1>
@@ -226,21 +288,21 @@ export default function GoalsPage() {
               <MacroInput 
                 label="Protein (g)" 
                 value={goals.protein} 
-                onChange={(val) => setGoals(prev => ({ ...prev, protein: val }))}
+                onChange={(val: number) => setGoals(prev => ({ ...prev, protein: val }))}
                 color="primary"
                 desc="Building blocks for muscle"
               />
               <MacroInput 
                 label="Carbohydrates (g)" 
                 value={goals.carbs} 
-                onChange={(val) => setGoals(prev => ({ ...prev, carbs: val }))}
+                onChange={(val: number) => setGoals(prev => ({ ...prev, carbs: val }))}
                 color="accent"
                 desc="Primary energy source"
               />
               <MacroInput 
                 label="Fats (g)" 
                 value={goals.fats} 
-                onChange={(val) => setGoals(prev => ({ ...prev, fats: val }))}
+                onChange={(val: number) => setGoals(prev => ({ ...prev, fats: val }))}
                 color="foreground"
                 desc="Hormonal & brain health"
               />
@@ -267,18 +329,6 @@ export default function GoalsPage() {
                     Warning: Macro total exceeds calorie target.
                   </div>
                 )}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-primary/5 border-primary/20">
-            <CardContent className="p-6 flex gap-4">
-              <Info className="w-6 h-6 text-primary shrink-0" />
-              <div className="space-y-2">
-                <p className="font-black text-primary uppercase tracking-widest text-xs">PaushtikPath Guidance</p>
-                <p className="text-muted-foreground text-xs leading-relaxed">
-                  These targets are based on the Harris-Benedict formula. Remember that actual needs may vary by up to 10% based on individual metabolism.
-                </p>
               </div>
             </CardContent>
           </Card>
