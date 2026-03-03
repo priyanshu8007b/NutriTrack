@@ -19,6 +19,7 @@ const SmartIndianMealSuggestionInputSchema = z.object({
   consumedProtein: z.number().describe('Protein consumed so far today in grams.'),
   consumedCarbs: z.number().describe('Carbohydrates consumed so far today in grams.'),
   consumedFats: z.number().describe('Fats consumed so far today in grams.'),
+  isVegOnly: z.boolean().optional().describe('Whether the user only eats vegetarian food.'),
   currentMealType: z.string().optional().describe('The current meal type for which suggestions are needed (e.g., "Lunch", "Dinner", "Snack").')
 });
 export type SmartIndianMealSuggestionInput = z.infer<typeof SmartIndianMealSuggestionInputSchema>;
@@ -54,7 +55,34 @@ const prompt = ai.definePrompt({
   name: 'smartIndianMealSuggestionPrompt',
   input: {schema: SmartIndianMealSuggestionInputSchema},
   output: {schema: SmartIndianMealSuggestionOutputSchema},
-  prompt: `You are an expert Indian nutritionist and chef. Your task is to analyze a user's daily nutritional goals and their consumed macros, then suggest culturally relevant Indian dishes or meal combinations to help them meet their remaining macro targets for the day.\n\nFirst, calculate the remaining calories, protein, carbohydrates, and fats the user needs to consume to reach their daily goals.\nThen, suggest 1-2 Indian dishes or meal combinations that are appropriate for the user's remaining macro needs, considering the current meal type if provided. Ensure the suggestions are diverse and appealing, and provide estimated macros for each suggestion.\n\nMake sure the dish names are authentic Indian cuisine names. If a meal is a combination of dishes, set 'isCombination' to true.\n\nDaily Goals:\n- Calories: {{{dailyCalorieGoal}}}\n- Protein: {{{dailyProteinGoal}}}g\n- Carbs: {{{dailyCarbGoal}}}g\n- Fats: {{{dailyFatGoal}}}g\n\nConsumed So Far:\n- Calories: {{{consumedCalories}}}\n- Protein: {{{consumedProtein}}}g\n- Carbs: {{{consumedCarbs}}}g\n- Fats: {{{consumedFats}}}g\n\n{{#if currentMealType}}\nCurrent Meal Type: {{{currentMealType}}}\n{{/if}}\n\nProvide your response in JSON format according to the output schema.`,
+  prompt: `You are an expert Indian nutritionist and chef. Your task is to analyze a user's daily nutritional goals and their consumed macros, then suggest culturally relevant Indian dishes or meal combinations to help them meet their remaining macro targets for the day.
+
+DIETARY PREFERENCE:
+{{#if isVegOnly}}
+- The user is VEGETARIAN. DO NOT suggest any meat, fish, or eggs. Suggest only pure vegetarian (veg) Indian dishes.
+{{else}}
+- The user has no specific dietary restrictions. You can suggest both veg and non-veg Indian dishes.
+{{/if}}
+
+CALCULATION TASK:
+1. Calculate remaining macros: (Goal - Consumed).
+2. If any remaining macro is negative (meaning the user has exceeded their goal), suggest very light, low-calorie Indian options like salads (Kachumber), buttermilk (Chaas), or clear soups that still provide some protein if needed.
+3. Suggest 1-2 authentic Indian dishes or combinations appropriate for the current meal type: {{{currentMealType}}}.
+
+USER DATA:
+Daily Goals:
+- Calories: {{{dailyCalorieGoal}}}
+- Protein: {{{dailyProteinGoal}}}g
+- Carbs: {{{dailyCarbGoal}}}g
+- Fats: {{{dailyFatGoal}}}g
+
+Consumed So Far:
+- Calories: {{{consumedCalories}}}
+- Protein: {{{consumedProtein}}}g
+- Carbs: {{{consumedCarbs}}}g
+- Fats: {{{consumedFats}}}g
+
+Ensure the 'remainingMacros' in the output accurately reflects (Goal - Consumed). Provide authentic dish names (e.g., 'Paneer Bhurji with Roti', 'Moong Dal Khichdi').`,
 });
 
 const smartIndianMealSuggestionFlow = ai.defineFlow(

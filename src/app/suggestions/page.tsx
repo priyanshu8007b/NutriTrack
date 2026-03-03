@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -34,6 +33,12 @@ export default function SuggestionsPage() {
   }, [])
 
   // --- Real-time Data ---
+
+  const userProfileRef = useMemoFirebase(() => {
+    if (!db || !user?.uid) return null
+    return doc(db, "userProfiles", user.uid)
+  }, [db, user?.uid])
+  const { data: userProfile } = useDoc(userProfileRef)
   
   const userGoalRef = useMemoFirebase(() => {
     if (!db || !user?.uid) return null
@@ -87,11 +92,12 @@ export default function SuggestionsPage() {
         consumedProtein: todayTotals.protein,
         consumedCarbs: todayTotals.carbs,
         consumedFats: todayTotals.fats,
+        isVegOnly: userProfile?.isVegOnly || false,
         currentMealType: mealType
       })
       setResult(output)
     } catch (error) {
-      console.error(error)
+      console.error("Suggestion Error:", error)
     } finally {
       setLoading(false)
     }
@@ -107,6 +113,11 @@ export default function SuggestionsPage() {
             <Zap className="w-3 h-3 fill-primary" />
             GenAI Powered
           </Badge>
+          {userProfile?.isVegOnly && (
+            <Badge variant="outline" className="px-3 py-1 border-green-500/30 bg-green-50 text-green-700 font-black uppercase tracking-widest text-[10px]">
+              Veg Only Enabled
+            </Badge>
+          )}
         </div>
         <div className="space-y-2">
           <h1 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">
