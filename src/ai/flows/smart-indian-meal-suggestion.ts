@@ -55,7 +55,7 @@ export async function smartIndianMealSuggestion(input: SmartIndianMealSuggestion
   const apiKey = process.env.GOOGLE_GENAI_API_KEY || process.env.GOOGLE_API_KEY;
   
   if (!apiKey) {
-    throw new Error("AI service is not configured. Please add GOOGLE_GENAI_API_KEY to your Environment Variables.");
+    throw new Error("AI service is not configured. Please add GOOGLE_GENAI_API_KEY to your Vercel Project Settings.");
   }
 
   try {
@@ -65,11 +65,15 @@ export async function smartIndianMealSuggestion(input: SmartIndianMealSuggestion
     const message = error.message || "";
     
     if (message.includes('API_KEY_INVALID') || message.includes('403') || message.includes('401')) {
-      throw new Error("Invalid API Key. Please verify GOOGLE_GENAI_API_KEY in your settings.");
+      throw new Error("Invalid API Key. Please verify GOOGLE_GENAI_API_KEY in your Vercel settings.");
     }
     
     if (message.includes('quota') || message.includes('429')) {
       throw new Error("AI service quota exceeded. Please try again in a moment.");
+    }
+
+    if (message.includes('not found') || message.includes('404')) {
+      throw new Error("The specified AI model was not found. Please ensure the Gemini API is correctly enabled for your project.");
     }
 
     throw new Error(error.message || "The AI nutritionist encountered an issue generating your suggestions.");
@@ -78,6 +82,7 @@ export async function smartIndianMealSuggestion(input: SmartIndianMealSuggestion
 
 const prompt = ai.definePrompt({
   name: 'smartIndianMealSuggestionPrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: {schema: z.object({
     input: SmartIndianMealSuggestionInputSchema,
     remaining: z.object({
