@@ -74,7 +74,6 @@ export default function LogMealPage() {
   }, [db, user?.uid])
   const { data: userGoal } = useDoc(userGoalRef)
 
-  const todayStr = new Date().toISOString().split('T')[0]
   const mealLogsQuery = useMemoFirebase(() => {
     if (!db || !user?.uid) return null
     return collection(db, "userProfiles", user.uid, "mealLogs")
@@ -84,8 +83,14 @@ export default function LogMealPage() {
 
   const todayLogs = React.useMemo(() => {
     if (!allLogs) return []
-    return allLogs.filter(log => log.loggedAt?.startsWith(todayStr))
-  }, [allLogs, todayStr])
+    const now = new Date()
+    return allLogs.filter(log => {
+      const logDate = new Date(log.loggedAt)
+      return logDate.getDate() === now.getDate() &&
+             logDate.getMonth() === now.getMonth() &&
+             logDate.getFullYear() === now.getFullYear()
+    })
+  }, [allLogs])
 
   const todayTotals = React.useMemo(() => {
     return todayLogs.reduce((acc, log) => {
@@ -101,9 +106,9 @@ export default function LogMealPage() {
   }, [todayLogs])
 
   const calorieTarget = userGoal?.targetCalories || 2000
-  const proteinTarget = userGoal ? (userGoal.targetCalories * userGoal.targetProteinRatio / 4) : 100
-  const carbsTarget = userGoal ? (userGoal.targetCalories * userGoal.targetCarbsRatio / 4) : 250
-  const fatsTarget = userGoal ? (userGoal.targetCalories * userGoal.targetFatsRatio / 9) : 65
+  const proteinTarget = userGoal ? Math.round(userGoal.targetCalories * userGoal.targetProteinRatio / 4) : 100
+  const carbsTarget = userGoal ? Math.round(userGoal.targetCalories * userGoal.targetCarbsRatio / 4) : 250
+  const fatsTarget = userGoal ? Math.round(userGoal.targetCalories * userGoal.targetFatsRatio / 9) : 65
 
   // --- Helpers ---
 
@@ -524,7 +529,7 @@ export default function LogMealPage() {
 }
 
 function MacroDetailCard({ label, current, target, unit, color }: any) {
-  const percent = Math.min((current / target) * 100, 100)
+  const percent = target > 0 ? Math.min((current / target) * 100, 100) : 0
   return (
     <div className="p-4 bg-card border border-border/50 rounded-2xl space-y-3 shadow-sm">
       <span className="block text-[9px] font-black uppercase tracking-widest text-muted-foreground">{label}</span>
