@@ -10,9 +10,6 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-// Increase timeout for Vercel deployment (Pro/Hobby defaults are low)
-export const maxDuration = 60;
-
 const SmartIndianMealSuggestionInputSchema = z.object({
   dailyCalorieGoal: z.number().describe("The user's daily calorie target."),
   dailyProteinGoal: z.number().describe("The user's daily protein target in grams."),
