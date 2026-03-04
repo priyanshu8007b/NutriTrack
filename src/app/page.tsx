@@ -11,7 +11,8 @@ import {
   LogIn,
   Salad,
   ChevronRight,
-  Leaf
+  Leaf,
+  Sparkles
 } from "lucide-react"
 import Link from "next/link"
 import { 
@@ -89,9 +90,7 @@ export default function DashboardPage() {
     
     const todayLogs = allLogs.filter(log => {
       const logDate = new Date(log.loggedAt)
-      return logDate.getDate() === currentDate.getDate() &&
-             logDate.getMonth() === currentDate.getMonth() &&
-             logDate.getFullYear() === currentDate.getFullYear()
+      return logDate.toDateString() === currentDate.toDateString();
     })
 
     return todayLogs.reduce((acc, log) => {
@@ -173,7 +172,10 @@ export default function DashboardPage() {
 
           <div className="flex items-center gap-3">
             <Button asChild variant="outline" className="border-border/50 text-foreground hover:bg-primary/5">
-              <Link href="/database">Browse Foods</Link>
+              <Link href="/suggestions" className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-primary" />
+                Smart Suggestions
+              </Link>
             </Button>
             <Button asChild className="bg-primary hover:bg-primary/90 font-bold shadow-lg shadow-primary/20">
               <Link href="/log">

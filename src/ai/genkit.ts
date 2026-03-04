@@ -1,5 +1,10 @@
+'use client';
 /**
- * Genkit configuration removed.
- * AI suggestions are disabled for now.
+ * @fileOverview Genkit configuration for the application.
  */
-export const ai = null;
+import { genkit } from 'genkit';
+import { googleAI } from '@genkit-ai/google-genai';
+
+export const ai = genkit({
+  plugins: [googleAI()],
+});

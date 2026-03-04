@@ -10,6 +10,7 @@ import {
   ChevronRight,
   LogIn,
   Salad,
+  Sparkles,
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -34,6 +35,7 @@ import { Button } from "@/components/ui/button"
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Log Meal", href: "/log", icon: UtensilsCrossed },
+  { name: "Smart Suggestions", href: "/suggestions", icon: Sparkles },
   { name: "My Goals", href: "/goals", icon: Target },
   { name: "Food Database", href: "/database", icon: Database },
 ]
