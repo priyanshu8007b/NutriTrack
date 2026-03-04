@@ -4,10 +4,8 @@ import * as React from "react"
 import {
   LayoutDashboard,
   UtensilsCrossed,
-  Sparkles,
   Target,
   Database,
-  User,
   LogOut,
   ChevronRight,
   LogIn,
@@ -26,7 +24,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarTrigger,
   SidebarGroup,
   SidebarGroupLabel,
   SidebarGroupContent,
@@ -37,7 +34,6 @@ import { Button } from "@/components/ui/button"
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Log Meal", href: "/log", icon: UtensilsCrossed },
-  { name: "AI Suggestions", href: "/suggestions", icon: Sparkles },
   { name: "My Goals", href: "/goals", icon: Target },
   { name: "Food Database", href: "/database", icon: Database },
 ]
@@ -45,7 +41,7 @@ const navigation = [
 export function AppSidebar() {
   const pathname = usePathname()
   const auth = useAuth()
-  const { user, isUserLoading } = useUser()
+  const { user } = useUser()
 
   const handleLogout = () => {
     signOut(auth).catch((error) => {

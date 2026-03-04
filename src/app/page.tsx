@@ -2,14 +2,11 @@
 
 import * as React from "react"
 import { 
-  TrendingUp, 
   Flame, 
   Dna, 
   Wheat, 
   Droplets,
   Plus,
-  ArrowRight,
-  Sparkles,
   Utensils,
   LogIn,
   Leaf,
@@ -56,8 +53,6 @@ export default function DashboardPage() {
     setMounted(true)
   }, [])
 
-  // --- Real-time Data Fetching ---
-
   const userProfileRef = useMemoFirebase(() => {
     if (!db || !user?.uid) return null
     return doc(db, "userProfiles", user.uid)
@@ -76,8 +71,6 @@ export default function DashboardPage() {
   }, [db, user?.uid])
   const { data: allLogs } = useCollection(mealLogsQuery)
 
-  // --- Actions ---
-
   const handleVegToggle = (checked: boolean) => {
     if (!db || !user?.uid) return
     const ref = doc(db, "userProfiles", user.uid)
@@ -88,8 +81,6 @@ export default function DashboardPage() {
       createdAt: userProfile?.createdAt || new Date().toISOString()
     }, { merge: true })
   }
-
-  // --- Data Processing (Optimized with O(1) Map) ---
 
   const todayTotals = React.useMemo(() => {
     if (!allLogs || !mounted) return { calories: 0, protein: 0, carbs: 0, fats: 0 }
@@ -138,7 +129,7 @@ export default function DashboardPage() {
         <div className="max-w-md space-y-4">
           <h1 className="text-4xl font-black tracking-tight text-foreground">Track Your Indian Nutrition</h1>
           <p className="text-lg text-muted-foreground">
-            Sign in to NutriTrack to start logging your meals, setting nutritional goals, and getting AI-powered Indian dish suggestions.
+            Sign in to NutriTrack to start logging your meals, setting nutritional goals, and managing your intake.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 pt-4 justify-center">
             <Button asChild size="lg" className="bg-primary hover:bg-primary/90 font-bold px-8 h-14 text-lg">
@@ -335,27 +326,6 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <Card className="shadow-sm border-border/50 overflow-hidden">
-          <CardHeader className="bg-primary/5 pb-6">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg font-bold flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-primary" />
-                Smart Indian Suggestion
-              </CardTitle>
-              <Button asChild variant="ghost" size="sm" className="text-primary hover:text-primary hover:bg-primary/10">
-                <Link href="/suggestions">
-                  Full Tools <ArrowRight className="w-4 h-4 ml-1" />
-                </Link>
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <div className="p-8 rounded-xl border border-dashed border-primary/20 bg-primary/5 text-center">
-              <p className="text-sm font-bold text-primary italic">"Input your logs to get personalized suggestions based on your remaining macros."</p>
-            </div>
-          </CardContent>
-        </Card>
-
         <Card className="shadow-sm border-border/50">
           <CardHeader>
             <CardTitle className="text-lg font-bold">Recent Meals</CardTitle>
@@ -363,7 +333,7 @@ export default function DashboardPage() {
           <CardContent className="p-0 px-6 pb-6">
             {allLogs && allLogs.length > 0 ? (
               <div className="space-y-4">
-                {allLogs.slice().reverse().slice(0, 3).map((log) => {
+                {allLogs.slice().reverse().slice(0, 5).map((log) => {
                   const food = FOOD_BY_ID.get(log.foodId)
                   return (
                     <div key={log.id} className="flex items-center justify-between group">
