@@ -38,6 +38,7 @@ export type SuggestionOutput = z.infer<typeof SuggestionOutputSchema>;
 
 const suggestionPrompt = ai.definePrompt({
   name: 'suggestionPrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: { schema: SuggestionInputSchema },
   output: { schema: SuggestionOutputSchema },
   prompt: `You are an expert Indian Nutritionist. 
