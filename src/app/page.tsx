@@ -10,7 +10,8 @@ import {
   Utensils,
   LogIn,
   Salad,
-  ChevronRight
+  ChevronRight,
+  Leaf
 } from "lucide-react"
 import Link from "next/link"
 import { 
