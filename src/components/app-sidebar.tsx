@@ -10,9 +10,8 @@ import {
   ChevronRight,
   LogIn,
   Salad,
-  Sparkles,
 } from "lucide-react"
-import Link from "next/link"
+import Link from "next/navigation"
 import { usePathname } from "next/navigation"
 import { signOut } from "firebase/auth"
 import { useAuth, useUser } from "@/firebase"
@@ -35,7 +34,6 @@ import { Button } from "@/components/ui/button"
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Log Meal", href: "/log", icon: UtensilsCrossed },
-  { name: "Smart Suggestions", href: "/suggestions", icon: Sparkles },
   { name: "My Goals", href: "/goals", icon: Target },
   { name: "Food Database", href: "/database", icon: Database },
 ]
@@ -86,13 +84,13 @@ export function AppSidebar() {
                         : "hover:bg-secondary/50 text-muted-foreground hover:text-foreground"
                     )}
                   >
-                    <Link href={item.href}>
+                    <a href={item.href}>
                       <item.icon className="w-5 h-5" />
                       <span className="font-medium">{item.name}</span>
                       {pathname === item.href && (
                         <ChevronRight className="ml-auto w-4 h-4 opacity-70" />
                       )}
-                    </Link>
+                    </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -127,10 +125,10 @@ export function AppSidebar() {
         ) : (
           <div className="p-2">
             <Button asChild className="w-full bg-primary hover:bg-primary/90 font-bold h-12">
-              <Link href="/login">
+              <a href="/login">
                 <LogIn className="w-4 h-4 mr-2" />
                 Sign In
-              </Link>
+              </a>
             </Button>
           </div>
         )}

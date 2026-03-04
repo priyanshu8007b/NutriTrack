@@ -11,8 +11,7 @@ import {
   LogIn,
   Salad,
   ChevronRight,
-  Leaf,
-  Sparkles
+  Leaf
 } from "lucide-react"
 import Link from "next/link"
 import { 
@@ -171,12 +170,6 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Button asChild variant="outline" className="border-border/50 text-foreground hover:bg-primary/5">
-              <Link href="/suggestions" className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-primary" />
-                Smart Suggestions
-              </Link>
-            </Button>
             <Button asChild className="bg-primary hover:bg-primary/90 font-bold shadow-lg shadow-primary/20">
               <Link href="/log">
                 <Plus className="w-4 h-4 mr-2" />

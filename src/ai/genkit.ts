@@ -1,11 +1,4 @@
 /**
- * @fileOverview Genkit configuration for the application.
+ * @fileOverview Genkit configuration removed.
  */
-import { genkit } from 'genkit';
-import { googleAI } from '@genkit-ai/google-genai';
-
-export const ai = genkit({
-  plugins: [
-    googleAI()
-  ],
-});
+export const ai = null;
