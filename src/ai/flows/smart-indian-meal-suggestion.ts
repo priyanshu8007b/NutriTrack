@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview AI Flow for suggesting Indian meals based on macro goals.
@@ -5,7 +6,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { INDIAN_FOOD_DATABASE, FoodItem } from '@/lib/mock-data';
+import { INDIAN_FOOD_DATABASE } from '@/lib/mock-data';
 
 const SuggestionInputSchema = z.object({
   targetCalories: z.number(),
@@ -49,7 +50,7 @@ STRICT CONSTRAINTS for suggestions:
 1. Each suggestion must be LESS than 1/3rd of the daily target ({{{targetCalories}}} / 3).
 2. Prioritize high-protein options (aim for ~40% of suggestion calories from protein).
 3. Use only real Indian dishes from the provided database context.
-4. Calculate 'servings' (0.5, 1, 1.5, or 2) to fit the remaining calories.
+4. Calculate 'servings' (0.5, 1, 1.5, or 2) to fit the remaining calories and protein needs.
 
 Database context (Top relevant matches):
 {{#each filteredDb}}

@@ -1,4 +1,4 @@
-'use client';
+
 /**
  * @fileOverview Genkit configuration for the application.
  */
