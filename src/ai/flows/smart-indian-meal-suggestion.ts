@@ -80,7 +80,7 @@ export async function smartIndianMealSuggestion(input: SmartIndianMealSuggestion
     // We aim for the smaller of (remaining calories) or (1/3rd daily calories)
     const targetCalories = Math.min(remaining.calories, maxMealCalories);
     
-    // Clamp servings between 0.5 and 2.5
+    // Clamp servings between 0.5 and 2.5 to keep it realistic
     let idealServings = Math.min(2.5, Math.max(0.5, Math.round((targetCalories / food.calories) * 2) / 2));
     
     const totalCalories = food.calories * idealServings;
