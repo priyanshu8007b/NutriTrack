@@ -1,7 +1,7 @@
 'use server';
 /**
  * @fileOverview A Local Macro-Matching Engine for suggesting culturally relevant Indian dishes.
- * This provides 100% reliability without external API dependencies.
+ * Implements strict constraints: Max 1/3 daily calories per meal and ~40% protein calorie ratio.
  */
 
 import { INDIAN_FOOD_DATABASE } from '@/lib/mock-data';
@@ -31,6 +31,7 @@ export interface MealSuggestion {
     fats: number;
   };
   isCombination: boolean;
+  proteinRatio: number;
 }
 
 export interface SmartIndianMealSuggestionOutput {
@@ -56,59 +57,57 @@ export async function smartIndianMealSuggestion(input: SmartIndianMealSuggestion
     fats: Math.max(0, input.dailyFatGoal - input.consumedFats),
   };
 
+  // Constraint: Single meal should not exceed 1/3rd of daily calorie requirement
+  const maxMealCalories = input.dailyCalorieGoal / 3;
+
   // Filter the database based on dietary preferences
   let candidates = INDIAN_FOOD_DATABASE.filter(food => {
     if (input.isVegOnly && !food.isVeg) return false;
     
-    // Simple category matching for meal types
+    // Basic category matching
     if (input.currentMealType === 'Breakfast') {
       return food.category === 'Breakfast' || food.category === 'Bread';
     }
     if (input.currentMealType === 'Snack') {
       return food.category === 'Snack' || food.category === 'Beverage';
     }
-    // For Lunch/Dinner, avoid breakfast-only items
     return food.category !== 'Breakfast' && food.category !== 'Beverage';
   });
 
-  // Ranking algorithm: Find foods that fit the calorie gap and help bridge the most needed macro
-  const macroRatios = {
-    protein: input.dailyProteinGoal > 0 ? remaining.protein / input.dailyProteinGoal : 0,
-    carbs: input.dailyCarbGoal > 0 ? remaining.carbs / input.dailyCarbGoal : 0,
-    fats: input.dailyFatGoal > 0 ? remaining.fats / input.dailyFatGoal : 0,
-  };
-
-  const priorityMacro = (macroRatios.protein >= macroRatios.carbs && macroRatios.protein >= macroRatios.fats) 
-    ? 'protein' 
-    : (macroRatios.carbs >= macroRatios.fats ? 'carbs' : 'fats');
-
-  // Score candidates
+  // Score candidates based on protein ratio (Target: 40% calories from protein)
   const scoredCandidates = candidates.map(food => {
-    let score = 0;
+    // 1. Determine serving size that fits the remaining gap but stays under 1/3rd daily cap
+    // We aim for the smaller of (remaining calories) or (1/3rd daily calories)
+    const targetCalories = Math.min(remaining.calories, maxMealCalories);
     
-    // Calculate ideal servings to fill calorie gap (clamped between 0.5 and 2.5)
-    let idealServings = 1;
-    if (remaining.calories > 0) {
-      idealServings = Math.min(2.5, Math.max(0.5, Math.round((remaining.calories / food.calories) * 2) / 2));
-    }
-
+    // Clamp servings between 0.5 and 2.5
+    let idealServings = Math.min(2.5, Math.max(0.5, Math.round((targetCalories / food.calories) * 2) / 2));
+    
     const totalCalories = food.calories * idealServings;
+    const totalProtein = food.protein * idealServings;
+    
+    // 2. Calculate Protein Ratio (Calories from protein / Total Calories)
+    // Protein has 4 kcal per gram
+    const proteinCalories = totalProtein * 4;
+    const proteinRatio = totalCalories > 0 ? proteinCalories / totalCalories : 0;
 
-    // Penalty for significantly exceeding calorie gap
-    if (remaining.calories > 50 && totalCalories > remaining.calories * 1.3) {
-      score -= 100;
+    let score = 0;
+
+    // A. Bonus for being close to the 40% protein calorie target
+    // We penalize distance from 0.40 ratio
+    const ratioDistance = Math.abs(proteinRatio - 0.40);
+    score += Math.max(0, 500 - (ratioDistance * 1000));
+
+    // B. Bonus for fitting the calorie target well (up to the cap)
+    const calorieFit = 1 - Math.abs(totalCalories - targetCalories) / targetCalories;
+    score += calorieFit * 200;
+
+    // C. Penalty if it significantly exceeds the 1/3rd daily calorie cap
+    if (totalCalories > maxMealCalories * 1.1) {
+      score -= 1000;
     }
 
-    // Bonus for bridging the priority macro (weighted by servings)
-    if (priorityMacro === 'protein') score += (food.protein * idealServings) * 3;
-    if (priorityMacro === 'carbs') score += (food.carbs * idealServings) * 1.5;
-    if (priorityMacro === 'fats') score += (food.fats * idealServings) * 1.2;
-
-    // Bonus for fitting into the calorie "sweet spot"
-    const calDiff = Math.abs(totalCalories - remaining.calories);
-    score += Math.max(0, 150 - (calDiff / 3));
-
-    return { food, score, idealServings };
+    return { food, score, idealServings, totalCalories, totalProtein, proteinRatio };
   });
 
   // Sort and pick top 3
@@ -117,7 +116,7 @@ export async function smartIndianMealSuggestion(input: SmartIndianMealSuggestion
     .slice(0, 3)
     .map(match => ({
       dishName: match.food.name,
-      description: `Authentic ${match.food.category} match. High in ${priorityMacro} to balance your remaining daily needs.`,
+      description: `Optimized for protein balance (~${(match.proteinRatio * 100).toFixed(0)}% cal from protein). This suggestion respects your ${Math.round(maxMealCalories)} kcal meal cap.`,
       servings: match.idealServings,
       servingSize: match.food.servingSize,
       estimatedMacros: {
@@ -126,11 +125,12 @@ export async function smartIndianMealSuggestion(input: SmartIndianMealSuggestion
         carbs: Math.round(match.food.carbs * match.idealServings),
         fats: Math.round(match.food.fats * match.idealServings),
       },
-      isCombination: false
+      isCombination: false,
+      proteinRatio: match.proteinRatio
     }));
 
-  // Artificial delay to mimic "Processing" feel
-  await new Promise(resolve => setTimeout(resolve, 600));
+  // Artificial delay for UX "Processing" feel
+  await new Promise(resolve => setTimeout(resolve, 800));
 
   return {
     remainingMacros: {

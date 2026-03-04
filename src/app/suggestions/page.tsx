@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Sparkles, Loader2, Info, CheckCircle2, Utensils, Zap, Target, AlertCircle, Cpu, Scale } from "lucide-react"
+import { Sparkles, Loader2, Info, CheckCircle2, Utensils, Zap, Target, AlertCircle, Cpu, Scale, ShieldCheck } from "lucide-react"
 import { smartIndianMealSuggestion, SmartIndianMealSuggestionOutput } from "@/ai/flows/smart-indian-meal-suggestion"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -134,14 +134,18 @@ export default function SuggestionsPage() {
   return (
     <div className="p-6 md:p-8 max-w-6xl mx-auto space-y-10 animate-in fade-in duration-500">
       <header className="space-y-4">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Badge variant="outline" className="px-3 py-1 border-primary/30 bg-primary/5 text-primary font-black uppercase tracking-widest text-[10px] flex items-center gap-1.5">
             <Cpu className="w-3 h-3" />
-            Nutri-Engine v2.0
+            Nutri-Engine v3.0
+          </Badge>
+          <Badge variant="outline" className="px-3 py-1 border-accent/30 bg-accent/5 text-accent font-black uppercase tracking-widest text-[10px] flex items-center gap-1.5">
+            <ShieldCheck className="w-3 h-3" />
+            Smart Constraints Active
           </Badge>
           {userProfile?.isVegOnly && (
             <Badge variant="outline" className="px-3 py-1 border-green-500/30 bg-green-50 text-green-700 font-black uppercase tracking-widest text-[10px]">
-              Veg Only Mode
+              Veg Only
             </Badge>
           )}
         </div>
@@ -150,7 +154,7 @@ export default function SuggestionsPage() {
             Smart Macro Matching
           </h1>
           <p className="text-muted-foreground text-lg md:text-xl max-w-2xl font-medium leading-relaxed">
-            Personalized Indian meal recommendations based on your remaining daily nutrition gaps.
+            Personalized Indian dishes capped at 1/3rd daily calories with ~40% protein energy distribution.
           </p>
         </div>
       </header>
@@ -189,7 +193,7 @@ export default function SuggestionsPage() {
                   {loading ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      Matching Dishes...
+                      Optimizing Macros...
                     </>
                   ) : (
                     <>
@@ -200,13 +204,18 @@ export default function SuggestionsPage() {
                 </div>
               </Button>
               
-              <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10">
+              <div className="p-4 bg-accent/5 rounded-2xl border border-accent/10 space-y-3">
                 <div className="flex gap-3">
-                  <Info className="w-5 h-5 text-primary shrink-0" />
-                  <p className="text-[11px] text-muted-foreground leading-relaxed font-medium">
-                    Our matching engine analyzes <strong>1,000+ authentic Indian items</strong> to find the best macro-balanced options for your current profile.
+                  <ShieldCheck className="w-5 h-5 text-accent shrink-0" />
+                  <p className="text-[11px] text-muted-foreground leading-relaxed font-bold">
+                    Constraint Enforcement:
                   </p>
                 </div>
+                <ul className="text-[10px] space-y-1.5 text-muted-foreground font-medium pl-8 list-disc">
+                  <li>Calorie limit: {Math.round(calorieTarget / 3)} kcal (1/3rd daily)</li>
+                  <li>Protein target: 40% of suggestion calories</li>
+                  <li>Verified Indian Database Match</li>
+                </ul>
               </div>
             </CardContent>
           </Card>
@@ -215,13 +224,13 @@ export default function SuggestionsPage() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-black flex items-center gap-2">
                 <Target className="w-4 h-4" />
-                Current Progress
+                Today's Context
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-1.5">
                 <div className="flex justify-between text-[10px] font-black uppercase tracking-tighter">
-                  <span>Calories</span>
+                  <span>Calories Consumed</span>
                   <span>{Math.round(todayTotals.calories)} / {calorieTarget}</span>
                 </div>
                 <Progress value={(todayTotals.calories / calorieTarget) * 100} className="h-1.5" />
@@ -251,9 +260,9 @@ export default function SuggestionsPage() {
                 <Cpu className="w-10 h-10 text-muted-foreground/30" />
               </div>
               <div className="max-w-md space-y-2">
-                <p className="text-2xl font-black text-foreground">Awaiting Input</p>
+                <p className="text-2xl font-black text-foreground">Engine Standby</p>
                 <p className="text-muted-foreground font-medium">
-                  Select a meal type to generate targeted suggestions from our pan-India database.
+                  Select a meal type to generate suggestions that fit your 1/3 calorie cap and 40% protein requirement.
                 </p>
               </div>
             </div>
@@ -267,29 +276,12 @@ export default function SuggestionsPage() {
                   <Cpu className="w-6 h-6 text-primary animate-pulse" />
                 </div>
               </div>
-              <p className="text-2xl font-black text-foreground tracking-tight">Finding Best Matches...</p>
+              <p className="text-2xl font-black text-foreground tracking-tight">Calculating Optimal Fit...</p>
             </div>
           )}
 
           {result && !loading && (
             <div className="space-y-8 animate-in slide-in-from-bottom-8 duration-700">
-              <Card className="bg-gradient-to-br from-primary/10 via-background to-background border-primary/20 overflow-hidden shadow-sm">
-                <CardHeader className="bg-primary/5 border-b border-primary/10 py-4">
-                  <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4" />
-                    Recommended Targets
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-8 pb-8 px-8">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                    <MacroStat label="Target Cal" value={result.remainingMacros.calories} unit="kcal" color="primary" />
-                    <MacroStat label="Target Protein" value={result.remainingMacros.protein} unit="g" color="accent" />
-                    <MacroStat label="Target Carbs" value={result.remainingMacros.carbs} unit="g" color="foreground" />
-                    <MacroStat label="Target Fats" value={result.remainingMacros.fats} unit="g" color="foreground" />
-                  </div>
-                </CardContent>
-              </Card>
-
               <div className="grid grid-cols-1 gap-8">
                 {result.mealSuggestions.map((suggestion, idx) => (
                   <Card key={idx} className="group shadow-md hover:shadow-xl border-border/50 transition-all duration-500 overflow-hidden rounded-[2rem]">
@@ -308,10 +300,12 @@ export default function SuggestionsPage() {
                             <h3 className="text-2xl font-black text-foreground leading-tight">
                               {suggestion.dishName}
                             </h3>
-                            <Badge variant="secondary" className="w-fit h-fit px-4 py-1.5 rounded-full bg-accent/10 text-accent font-black text-xs border-accent/20 flex items-center gap-2">
-                              <Scale className="w-3.5 h-3.5" />
-                              {suggestion.servings} Servings (Size: {suggestion.servingSize})
-                            </Badge>
+                            <div className="flex gap-2">
+                              <Badge variant="secondary" className="w-fit h-fit px-4 py-1.5 rounded-full bg-accent/10 text-accent font-black text-xs border-accent/20 flex items-center gap-2">
+                                <Scale className="w-3.5 h-3.5" />
+                                {suggestion.servings} Servings ({suggestion.servingSize})
+                              </Badge>
+                            </div>
                           </div>
                           <p className="text-muted-foreground font-medium text-base leading-relaxed">
                             {suggestion.description}
@@ -319,10 +313,34 @@ export default function SuggestionsPage() {
                         </div>
                         
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-border/30">
-                          <MacroValue label="Total Cal" value={suggestion.estimatedMacros.calories} unit="kcal" highlight />
-                          <MacroValue label="Protein" value={suggestion.estimatedMacros.protein} unit="g" />
-                          <MacroValue label="Carbs" value={suggestion.estimatedMacros.carbs} unit="g" />
-                          <MacroValue label="Fats" value={suggestion.estimatedMacros.fats} unit="g" />
+                          <div className="text-center p-3 rounded-2xl border border-primary/20 bg-primary/5">
+                            <span className="block text-[9px] font-black uppercase tracking-widest text-primary mb-1">Total Cal</span>
+                            <div className="flex items-baseline justify-center gap-0.5">
+                              <span className="text-lg font-black text-primary">{Math.round(suggestion.estimatedMacros.calories)}</span>
+                              <span className="text-[10px] font-bold text-primary/60">kcal</span>
+                            </div>
+                          </div>
+                          <div className="text-center p-3 rounded-2xl border border-accent/20 bg-accent/5">
+                            <span className="block text-[9px] font-black uppercase tracking-widest text-accent mb-1">Protein</span>
+                            <div className="flex items-baseline justify-center gap-0.5">
+                              <span className="text-lg font-black text-accent">{Math.round(suggestion.estimatedMacros.protein)}g</span>
+                              <span className="text-[10px] font-bold text-accent/60">g</span>
+                            </div>
+                          </div>
+                          <div className="text-center p-3 rounded-2xl border border-border/50 bg-secondary/5">
+                            <span className="block text-[9px] font-black uppercase tracking-widest text-muted-foreground/70 mb-1">Carbs</span>
+                            <div className="flex items-baseline justify-center gap-0.5">
+                              <span className="text-lg font-black">{Math.round(suggestion.estimatedMacros.carbs)}</span>
+                              <span className="text-[10px] font-bold text-muted-foreground/50">g</span>
+                            </div>
+                          </div>
+                          <div className="text-center p-3 rounded-2xl border border-border/50 bg-secondary/5">
+                            <span className="block text-[9px] font-black uppercase tracking-widest text-muted-foreground/70 mb-1">Fats</span>
+                            <div className="flex items-baseline justify-center gap-0.5">
+                              <span className="text-lg font-black">{Math.round(suggestion.estimatedMacros.fats)}</span>
+                              <span className="text-[10px] font-bold text-muted-foreground/50">g</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -332,38 +350,6 @@ export default function SuggestionsPage() {
             </div>
           )}
         </div>
-      </div>
-    </div>
-  )
-}
-
-function MacroStat({ label, value, unit, color }: any) {
-  return (
-    <div className="flex flex-col space-y-1">
-      <span className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground">{label}</span>
-      <div className="flex items-baseline gap-1.5">
-        <span className={cn(
-          "text-3xl font-black",
-          color === "primary" ? "text-primary" : color === "accent" ? "text-accent" : "text-foreground"
-        )}>
-          {Math.max(0, Math.round(value))}
-        </span>
-        <span className="text-xs font-bold text-muted-foreground/60">{unit}</span>
-      </div>
-    </div>
-  )
-}
-
-function MacroValue({ label, value, unit, highlight }: any) {
-  return (
-    <div className={cn(
-      "text-center p-3 rounded-2xl border border-border/50 bg-secondary/5",
-      highlight && "bg-primary/5 border-primary/20"
-    )}>
-      <span className="block text-[9px] font-black uppercase tracking-widest text-muted-foreground/70 mb-1">{label}</span>
-      <div className="flex items-baseline justify-center gap-0.5">
-        <span className={cn("text-lg font-black", highlight ? "text-primary" : "text-foreground")}>{Math.round(value)}</span>
-        <span className="text-[10px] font-bold text-muted-foreground/50">{unit}</span>
       </div>
     </div>
   )
