@@ -43,11 +43,14 @@ const SmartIndianMealSuggestionOutputSchema = z.object({
 });
 export type SmartIndianMealSuggestionOutput = z.infer<typeof SmartIndianMealSuggestionOutputSchema>;
 
+/**
+ * Server Action to generate smart meal suggestions.
+ */
 export async function smartIndianMealSuggestion(input: SmartIndianMealSuggestionInput): Promise<SmartIndianMealSuggestionOutput> {
   const apiKey = process.env.GOOGLE_GENAI_API_KEY || process.env.GOOGLE_API_KEY;
   
   if (!apiKey) {
-    throw new Error("API Key Missing: Please add GOOGLE_GENAI_API_KEY to your Vercel Environment Variables and redeploy.");
+    throw new Error("API Key Missing: Please add GOOGLE_GENAI_API_KEY to your Vercel Environment Variables.");
   }
 
   try {
@@ -57,11 +60,11 @@ export async function smartIndianMealSuggestion(input: SmartIndianMealSuggestion
     const message = error.message || "";
     
     if (message.includes('404') || message.includes('not found')) {
-      throw new Error("Model Not Found: This may be due to regional restrictions or API version mismatch. Ensure your API key is from a supported region in Google AI Studio.");
+      throw new Error("Model Configuration Error: The AI service could not find the requested model. This often happens due to regional restrictions on Gemini or an API version mismatch.");
     }
     
     if (message.includes('403') || message.includes('API_KEY_INVALID')) {
-      throw new Error("Invalid API Key: Please verify your Gemini API key in Vercel settings.");
+      throw new Error("Invalid API Key: Your Gemini API key is invalid or unauthorized. Please verify it in Vercel.");
     }
 
     throw new Error(message || "The AI nutritionist encountered an issue generating your suggestions.");
@@ -84,7 +87,8 @@ const prompt = ai.definePrompt({
   system: `You are an expert Indian nutritionist. Suggest healthy, authentic Indian meals.
   - If isVegOnly is true, NO meat/eggs/fish.
   - Suggest regional dishes with estimated macros.
-  - Focus on balancing the remaining macros provided.`,
+  - Focus on balancing the remaining macros provided.
+  - Use common household measurements in descriptions.`,
   prompt: `
   User Preference: {{#if input.isVegOnly}}Vegetarian{{else}}Any{{/if}}
   Current Meal: {{{input.currentMealType}}}
@@ -113,7 +117,7 @@ const smartIndianMealSuggestionFlow = ai.defineFlow(
 
     const result = await prompt({ input, remaining });
     if (!result || !result.output) {
-      throw new Error("AI failed to generate suggestions.");
+      throw new Error("AI failed to generate output.");
     }
 
     return result.output;

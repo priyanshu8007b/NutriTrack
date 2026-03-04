@@ -3,8 +3,12 @@ import {googleAI} from '@genkit-ai/google-genai';
 
 /**
  * Genkit instance configured with the Google AI plugin.
- * This instance is used to define flows, prompts, and schemas.
+ * We explicitly pass the API key to ensure it is picked up correctly in production environments like Vercel.
  */
 export const ai = genkit({
-  plugins: [googleAI()],
+  plugins: [
+    googleAI({
+      apiKey: process.env.GOOGLE_GENAI_API_KEY || process.env.GOOGLE_API_KEY,
+    }),
+  ],
 });
