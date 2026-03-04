@@ -1,6 +1,9 @@
 'use server';
 /**
  * @fileOverview AI Flow for suggesting Indian meals based on macro goals.
+ * 
+ * This flow analyzes the user's daily goals and remaining macros to suggest
+ * authentic Indian dishes from a curated database.
  */
 
 import { ai } from '@/ai/genkit';
@@ -71,18 +74,22 @@ const smartIndianMealSuggestionFlow = ai.defineFlow(
     outputSchema: SuggestionOutputSchema,
   },
   async (input) => {
-    // Pre-filter database to help the LLM stay accurate
+    // Pre-filter database to help the LLM stay accurate and relevant
     const filteredDb = INDIAN_FOOD_DATABASE
       .filter(f => (input.isVegOnly ? f.isVeg : true))
-      .filter(f => f.calories <= (input.targetCalories / 3))
+      .filter(f => f.calories <= (input.targetCalories / 2)) // Allow slightly larger meals if needed
       .sort((a, b) => (b.protein / b.calories) - (a.protein / a.calories)) // Sort by protein density
-      .slice(0, 40); // Send top 40 matches to context
+      .slice(0, 50); // Send top 50 matches to context
 
     const { output } = await suggestionPrompt({
       ...input,
       filteredDb: filteredDb as any,
     });
     
-    return output!;
+    if (!output) {
+      throw new Error('AI failed to generate a response');
+    }
+    
+    return output;
   }
 );
