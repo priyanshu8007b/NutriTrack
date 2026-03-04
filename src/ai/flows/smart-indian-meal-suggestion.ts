@@ -1,14 +1,11 @@
 'use server';
 /**
  * @fileOverview A GenAI tool for suggesting culturally relevant Indian dishes or meal combinations to meet remaining daily macro targets.
- *
- * - smartIndianMealSuggestion - A function that handles the meal suggestion process.
- * - SmartIndianMealSuggestionInput - The input type for the smartIndianMealSuggestion function.
- * - SmartIndianMealSuggestionOutput - The return type for the smartIndianMealSuggestion function.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import {gemini15Flash} from '@genkit-ai/google-genai';
 
 const SmartIndianMealSuggestionInputSchema = z.object({
   dailyCalorieGoal: z.number().describe("The user's daily calorie target."),
@@ -47,15 +44,11 @@ const SmartIndianMealSuggestionOutputSchema = z.object({
 });
 export type SmartIndianMealSuggestionOutput = z.infer<typeof SmartIndianMealSuggestionOutputSchema>;
 
-/**
- * Main entry point for the smart Indian meal suggestion feature.
- * Handles API key verification and calls the Genkit flow.
- */
 export async function smartIndianMealSuggestion(input: SmartIndianMealSuggestionInput): Promise<SmartIndianMealSuggestionOutput> {
   const apiKey = process.env.GOOGLE_GENAI_API_KEY || process.env.GOOGLE_API_KEY;
   
   if (!apiKey) {
-    throw new Error("AI service is not configured. Please add GOOGLE_GENAI_API_KEY to your Vercel Project Settings.");
+    throw new Error("API key missing. Ensure GOOGLE_GENAI_API_KEY is set in your Vercel Project Settings.");
   }
 
   try {
@@ -64,25 +57,21 @@ export async function smartIndianMealSuggestion(input: SmartIndianMealSuggestion
     console.error("Genkit Flow Error:", error);
     const message = error.message || "";
     
-    if (message.includes('API_KEY_INVALID') || message.includes('403') || message.includes('401')) {
-      throw new Error("Invalid API Key. Please verify GOOGLE_GENAI_API_KEY in your Vercel settings.");
+    if (message.includes('404') || message.includes('not found')) {
+      throw new Error("Model not found (404). This usually means the Gemini API is not enabled for your project or the region is unsupported. Check Google AI Studio settings.");
     }
     
-    if (message.includes('quota') || message.includes('429')) {
-      throw new Error("AI service quota exceeded. Please try again in a moment.");
+    if (message.includes('403') || message.includes('API_KEY_INVALID')) {
+      throw new Error("Invalid API Key. Please verify your Gemini API key from Google AI Studio.");
     }
 
-    if (message.includes('not found') || message.includes('404')) {
-      throw new Error("The specified AI model was not found. Please ensure the Gemini API is correctly enabled for your project.");
-    }
-
-    throw new Error(error.message || "The AI nutritionist encountered an issue generating your suggestions.");
+    throw new Error(message || "The AI nutritionist encountered an issue generating your suggestions.");
   }
 }
 
 const prompt = ai.definePrompt({
   name: 'smartIndianMealSuggestionPrompt',
-  model: 'googleai/gemini-1.5-flash',
+  model: gemini15Flash,
   input: {schema: z.object({
     input: SmartIndianMealSuggestionInputSchema,
     remaining: z.object({
@@ -93,26 +82,20 @@ const prompt = ai.definePrompt({
     })
   })},
   output: {schema: SmartIndianMealSuggestionOutputSchema},
-  system: `You are an expert Indian nutritionist and master chef. Your goal is to suggest authentic, healthy, and culturally relevant Indian meals that help users meet their daily macro-nutrient targets.
-
-  Core Guidelines:
-  1. DIETARY STRICTION: If 'isVegOnly' is true, NEVER suggest meat, eggs, or fish. Focus on lentils, paneer, soy, and dairy.
-  2. CULTURAL DEPTH: Suggest dishes from diverse Indian regions (North, South, East, West). Use specific names like 'Misal Pav', 'Ragi Mudde', 'Kadhi Pakora'.
-  3. MACRO FOCUS: If protein is needed, suggest high-protein options like 'Dal Chilla', 'Soy Keema', or 'Grilled Fish'.
-  4. LIGHT OPTIONS: If remaining calories are <200, suggest healthy Indian snacks like 'Makhana', 'Sprout Salad', or 'Buttermilk'.`,
+  system: `You are an expert Indian nutritionist. Suggest healthy, authentic Indian meals.
+  - If isVegOnly is true, NO meat/eggs/fish.
+  - Suggest regional dishes with estimated macros.
+  - Focus on balancing the remaining macros provided.`,
   prompt: `
-  CONTEXT:
-  - User Preference: {{#if input.isVegOnly}}Vegetarian Only{{else}}Any (Veg/Non-Veg){{/if}}
-  - Current Meal: {{{input.currentMealType}}}
-  - Remaining Target for Today: 
-    - Calories: {{{remaining.calories}}} kcal
-    - Protein: {{{remaining.protein}}}g
-    - Carbs: {{{remaining.carbs}}}g
-    - Fats: {{{remaining.fats}}}g
+  User Preference: {{#if input.isVegOnly}}Vegetarian{{else}}Any{{/if}}
+  Current Meal: {{{input.currentMealType}}}
+  Remaining Today: 
+  - Cal: {{{remaining.calories}}}
+  - Prot: {{{remaining.protein}}}g
+  - Carbs: {{{remaining.carbs}}}g
+  - Fats: {{{remaining.fats}}}g
 
-  TASK:
-  Provide 3 unique Indian meal suggestions that logically fit into the remaining macro budget.
-  Ensure the 'remainingMacros' in the output matches the calculated remaining values provided here.`,
+  Suggest 3 meals that fit this budget.`,
 });
 
 const smartIndianMealSuggestionFlow = ai.defineFlow(
@@ -122,7 +105,6 @@ const smartIndianMealSuggestionFlow = ai.defineFlow(
     outputSchema: SmartIndianMealSuggestionOutputSchema,
   },
   async (input) => {
-    // Calculate remaining targets precisely in TypeScript
     const remaining = {
       calories: Math.round(Math.max(0, input.dailyCalorieGoal - input.consumedCalories)),
       protein: Math.round(Math.max(0, input.dailyProteinGoal - input.consumedProtein)),
@@ -130,14 +112,9 @@ const smartIndianMealSuggestionFlow = ai.defineFlow(
       fats: Math.round(Math.max(0, input.dailyFatGoal - input.consumedFats)),
     };
 
-    // Execute the prompt with the model
-    const result = await prompt({
-      input,
-      remaining,
-    });
-    
+    const result = await prompt({ input, remaining });
     if (!result || !result.output) {
-      throw new Error("AI failed to generate a valid response. Please try again.");
+      throw new Error("AI failed to generate suggestions.");
     }
 
     return result.output;
