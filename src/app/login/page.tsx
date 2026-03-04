@@ -47,7 +47,7 @@ export default function LoginPage() {
         <Card className="border-border/50 shadow-xl overflow-hidden bg-card/50 backdrop-blur-sm">
           <CardHeader className="text-center pb-2">
             <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
-            <CardDescription>Sign in to track your meals and get AI suggestions</CardDescription>
+            <CardDescription>Sign in to track your meals and manage your health goals</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 pt-6">
             <Button 
@@ -84,7 +84,7 @@ export default function LoginPage() {
             
             <div className="flex items-center gap-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest py-2">
               <div className="h-px flex-1 bg-border/50" />
-              <span>Features Included</span>
+              <span>Core Features</span>
               <div className="h-px flex-1 bg-border/50" />
             </div>
 
@@ -95,11 +95,11 @@ export default function LoginPage() {
               </li>
               <li className="flex items-center gap-3 text-sm text-muted-foreground">
                 <ShieldCheck className="w-4 h-4 text-primary" />
-                AI-Powered Culturally Relevant Suggestions
+                Regional Nutritional Accuracy
               </li>
               <li className="flex items-center gap-3 text-sm text-muted-foreground">
                 <ShieldCheck className="w-4 h-4 text-primary" />
-                1,000+ Dish Nutritional Database
+                1,000+ Verified Indian Food Items
               </li>
             </ul>
           </CardContent>

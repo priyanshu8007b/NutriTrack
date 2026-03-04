@@ -10,7 +10,8 @@ import {
   Utensils,
   LogIn,
   Leaf,
-  Salad
+  Salad,
+  ChevronRight
 } from "lucide-react"
 import Link from "next/link"
 import { 
@@ -40,7 +41,7 @@ import {
   useCollection, 
   useDoc, 
   useMemoFirebase,
-  setDocumentNonBlocking
+  setDocumentNonBlocking 
 } from "@/firebase"
 import { collection, doc } from "firebase/firestore"
 
@@ -129,7 +130,7 @@ export default function DashboardPage() {
         <div className="max-w-md space-y-4">
           <h1 className="text-4xl font-black tracking-tight text-foreground">Track Your Indian Nutrition</h1>
           <p className="text-lg text-muted-foreground">
-            Sign in to NutriTrack to start logging your meals, setting nutritional goals, and managing your intake.
+            Sign in to NutriTrack to start logging your meals, setting nutritional goals, and managing your daily intake.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 pt-4 justify-center">
             <Button asChild size="lg" className="bg-primary hover:bg-primary/90 font-bold px-8 h-14 text-lg">
@@ -154,7 +155,7 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
             {user?.displayName ? `Namaste, ${user.displayName.split(' ')[0]}!` : "Namaste!"}
           </h1>
-          <p className="text-muted-foreground">Welcome to NutriTrack. Here's your overview for today.</p>
+          <p className="text-muted-foreground">Welcome back to NutriTrack. Here's your daily status.</p>
         </div>
         
         <div className="flex flex-wrap items-center gap-4">
@@ -174,7 +175,7 @@ export default function DashboardPage() {
             <Button asChild variant="outline" className="border-border/50 text-foreground hover:bg-primary/5">
               <Link href="/database">Browse Foods</Link>
             </Button>
-            <Button asChild className="bg-primary hover:bg-primary/90 font-bold">
+            <Button asChild className="bg-primary hover:bg-primary/90 font-bold shadow-lg shadow-primary/20">
               <Link href="/log">
                 <Plus className="w-4 h-4 mr-2" />
                 Log Meal
@@ -223,15 +224,9 @@ export default function DashboardPage() {
         <Card className="lg:col-span-2 shadow-sm border-border/50">
           <CardHeader className="flex flex-row items-center justify-between pb-8">
             <div>
-              <CardTitle className="text-xl font-bold">Weekly Intake Trends</CardTitle>
-              <CardDescription>Daily calorie consumption over the last 7 days</CardDescription>
+              <CardTitle className="text-xl font-bold">Weekly Progress</CardTitle>
+              <CardDescription>Intake trends for the last 7 days</CardDescription>
             </div>
-            <Tabs defaultValue="calories" className="w-[200px]">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="calories">Calories</TabsTrigger>
-                <TabsTrigger value="macros">Macros</TabsTrigger>
-              </TabsList>
-            </Tabs>
           </CardHeader>
           <CardContent>
             {allLogs && allLogs.length > 0 ? (
@@ -250,12 +245,14 @@ export default function DashboardPage() {
                  </ResponsiveContainer>
                </div>
             ) : (
-              <div className="h-[300px] w-full flex items-center justify-center border-2 border-dashed border-border/50 rounded-xl">
+              <div className="h-[300px] w-full flex items-center justify-center border-2 border-dashed border-border/50 rounded-xl bg-secondary/5">
                 <div className="text-center p-6">
                   <p className="font-bold text-muted-foreground">No logs yet this week</p>
-                  <p className="text-xs text-muted-foreground/60 mt-1">Start logging meals to see your progress.</p>
-                  <Button asChild variant="link" className="mt-2 text-primary p-0">
-                    <Link href="/log">Log your first meal</Link>
+                  <p className="text-xs text-muted-foreground/60 mt-1">Start tracking to see your weekly performance.</p>
+                  <Button asChild variant="link" className="mt-2 text-primary p-0 h-auto">
+                    <Link href="/log" className="flex items-center gap-1">
+                      Log your first meal <ChevronRight className="w-3 h-3" />
+                    </Link>
                   </Button>
                 </div>
               </div>
@@ -304,13 +301,13 @@ export default function DashboardPage() {
                 </div>
                </div>
              ) : (
-              <>
-                <div className="h-[200px] w-full flex items-center justify-center border-2 border-dashed border-border/50 rounded-full aspect-square max-w-[200px]">
-                  <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground/40">No Data</span>
+              <div className="flex flex-col items-center w-full">
+                <div className="h-[200px] w-full flex items-center justify-center border-2 border-dashed border-border/50 rounded-full aspect-square max-w-[200px] bg-secondary/5">
+                  <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground/40">Log data to view</span>
                 </div>
                 <div className="w-full space-y-3 mt-6">
                   {["Protein", "Carbs", "Fats"].map((name) => (
-                    <div key={name} className="flex items-center justify-between text-sm">
+                    <div key={name} className="flex items-center justify-between text-sm opacity-50">
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full bg-muted" />
                         <span className="font-medium">{name}</span>
@@ -319,7 +316,7 @@ export default function DashboardPage() {
                     </div>
                   ))}
                 </div>
-              </>
+              </div>
              )}
           </CardContent>
         </Card>
@@ -327,8 +324,11 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <Card className="shadow-sm border-border/50">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-lg font-bold">Recent Meals</CardTitle>
+            <Button asChild variant="link" size="sm" className="text-primary font-bold">
+              <Link href="/log">View History</Link>
+            </Button>
           </CardHeader>
           <CardContent className="p-0 px-6 pb-6">
             {allLogs && allLogs.length > 0 ? (
@@ -338,8 +338,8 @@ export default function DashboardPage() {
                   return (
                     <div key={log.id} className="flex items-center justify-between group">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-secondary/50 flex items-center justify-center">
-                          <Utensils className="w-5 h-5 text-muted-foreground" />
+                        <div className="w-10 h-10 rounded-lg bg-secondary/50 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                          <Utensils className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
                         </div>
                         <div>
                           <p className="text-sm font-bold">{food?.name || "Unknown Dish"}</p>
@@ -352,10 +352,11 @@ export default function DashboardPage() {
                 })}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
-                <p className="text-sm font-medium">No recent meals found.</p>
-                <Button asChild variant="link" className="text-primary mt-1">
-                  <Link href="/log">Add a meal now</Link>
+              <div className="flex flex-col items-center justify-center h-48 text-muted-foreground bg-secondary/5 rounded-xl border border-dashed border-border/50">
+                <Utensils className="w-8 h-8 opacity-20 mb-3" />
+                <p className="text-sm font-medium">No recent meals logged today.</p>
+                <Button asChild variant="link" className="text-primary mt-1 p-0 h-auto">
+                  <Link href="/log">Log your first meal</Link>
                 </Button>
               </div>
             )}
