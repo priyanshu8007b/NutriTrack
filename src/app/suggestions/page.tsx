@@ -76,7 +76,14 @@ export default function SuggestionsPage() {
   }, [allLogs]);
 
   const generateSuggestions = async () => {
-    if (!user) return;
+    if (!user) {
+        toast({
+            variant: 'destructive',
+            title: 'Auth Required',
+            description: 'Please sign in to get personalized suggestions.',
+        });
+        return;
+    }
     setIsLoading(true);
     try {
       const calorieTarget = userGoal?.targetCalories || DEFAULT_GOALS.calories;
@@ -93,11 +100,16 @@ export default function SuggestionsPage() {
         isVegOnly: userProfile?.isVegOnly || false,
       });
       setSuggestions(res);
-    } catch (e) {
+      toast({
+          title: 'Suggestions Ready!',
+          description: 'AI has analyzed your day and found the best matches.',
+      });
+    } catch (e: any) {
+      console.error('AI Suggestion error:', e);
       toast({
         variant: 'destructive',
         title: 'AI Error',
-        description: 'Failed to generate suggestions. Please try again.',
+        description: 'Failed to generate suggestions. Ensure your Gemini API key is set.',
       });
     } finally {
       setIsLoading(false);
@@ -128,7 +140,7 @@ export default function SuggestionsPage() {
             AI Smart Suggestions
           </h1>
           <p className="text-muted-foreground mt-2 text-lg">
-            Personalized Indian meals optimized for your 40% protein goal.
+            Personalized Indian meals optimized for your macro goals.
           </p>
         </div>
         <Button 
