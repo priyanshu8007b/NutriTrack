@@ -19,7 +19,6 @@ import {
   useMemoFirebase 
 } from "@/firebase"
 import { collection, doc } from "firebase/firestore"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function SuggestionsPage() {
   const { user, isUserLoading } = useUser()
