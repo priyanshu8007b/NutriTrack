@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -10,8 +11,8 @@ import {
   ChevronRight,
   LogIn,
   Salad,
+  Lightbulb
 } from "lucide-react"
-import Link from "next/navigation"
 import { usePathname } from "next/navigation"
 import { signOut } from "firebase/auth"
 import { useAuth, useUser } from "@/firebase"
@@ -36,6 +37,7 @@ const navigation = [
   { name: "Log Meal", href: "/log", icon: UtensilsCrossed },
   { name: "My Goals", href: "/goals", icon: Target },
   { name: "Food Database", href: "/database", icon: Database },
+  { name: "Nutrition Tips", href: "/tips", icon: Lightbulb },
 ]
 
 export function AppSidebar() {

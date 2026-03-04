@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -11,7 +12,8 @@ import {
   LogIn,
   Salad,
   ChevronRight,
-  Leaf
+  Leaf,
+  Lightbulb
 } from "lucide-react"
 import Link from "next/link"
 import { 
@@ -257,62 +259,25 @@ export default function DashboardPage() {
 
         <Card className="shadow-sm border-border/50">
           <CardHeader>
-            <CardTitle className="text-xl font-bold">Macro Distribution</CardTitle>
-            <CardDescription>Today's nutrient balance</CardDescription>
+            <CardTitle className="text-xl font-bold">Quick Tips</CardTitle>
+            <CardDescription>Authentic Indian guidance</CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col items-center">
-             {totalMacros > 0 ? (
-               <div className="h-[250px] w-full">
-                 <ResponsiveContainer width="100%" height="100%">
-                   <PieChart>
-                     <Pie
-                       data={macroData}
-                       cx="50%"
-                       cy="50%"
-                       innerRadius={60}
-                       outerRadius={80}
-                       paddingAngle={5}
-                       dataKey="value"
-                     >
-                       {macroData.map((entry, index) => (
-                         <Cell key={`cell-${index}`} fill={entry.color} />
-                       ))}
-                     </Pie>
-                     <Tooltip />
-                   </PieChart>
-                 </ResponsiveContainer>
-                 <div className="w-full space-y-3 mt-4">
-                  {macroData.map((macro) => (
-                    <div key={macro.name} className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: macro.color }} />
-                        <span className="font-medium">{macro.name}</span>
-                      </div>
-                      <span className="text-muted-foreground">
-                        {Math.round((macro.value / totalMacros) * 100)}%
-                      </span>
-                    </div>
-                  ))}
-                </div>
-               </div>
-             ) : (
-              <div className="flex flex-col items-center w-full">
-                <div className="h-[200px] w-full flex items-center justify-center border-2 border-dashed border-border/50 rounded-full aspect-square max-w-[200px] bg-secondary/5">
-                  <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground/40">Log data to view</span>
-                </div>
-                <div className="w-full space-y-3 mt-6">
-                  {["Protein", "Carbs", "Fats"].map((name) => (
-                    <div key={name} className="flex items-center justify-between text-sm opacity-50">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-muted" />
-                        <span className="font-medium">{name}</span>
-                      </div>
-                      <span className="text-muted-foreground">0%</span>
-                    </div>
-                  ))}
-                </div>
+          <CardContent className="space-y-6">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <Lightbulb className="w-4 h-4 text-primary" />
               </div>
-             )}
+              <p className="text-sm text-muted-foreground">Include Dal or Paneer in every meal to meet your protein targets.</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-green-600/10 flex items-center justify-center shrink-0">
+                <Leaf className="w-4 h-4 text-green-600" />
+              </div>
+              <p className="text-sm text-muted-foreground">Start with salad to control glucose spikes from Rice or Roti.</p>
+            </div>
+            <Button asChild variant="outline" className="w-full mt-4">
+              <Link href="/tips">View All Tips</Link>
+            </Button>
           </CardContent>
         </Card>
       </div>
