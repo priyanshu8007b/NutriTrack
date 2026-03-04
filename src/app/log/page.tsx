@@ -61,6 +61,7 @@ export default function LogMealPage() {
   const { toast } = useToast()
 
   const [mounted, setMounted] = React.useState(false)
+  const [currentDate, setCurrentDate] = React.useState<Date | null>(null)
   const [search, setSearch] = React.useState("")
   const [selectedCategory, setSelectedCategory] = React.useState<MealCategory>("All")
   const [selectedItems, setSelectedItems] = React.useState<{ food: FoodItem, quantity: number }[]>([])
@@ -72,6 +73,7 @@ export default function LogMealPage() {
 
   React.useEffect(() => {
     setMounted(true)
+    setCurrentDate(new Date())
   }, [])
 
   // --- Real-time Data ---
@@ -96,15 +98,14 @@ export default function LogMealPage() {
   const { data: allLogs } = useCollection(mealLogsQuery)
 
   const todayLogs = React.useMemo(() => {
-    if (!allLogs || !mounted) return []
-    const now = new Date()
+    if (!allLogs || !currentDate) return []
     return allLogs.filter(log => {
       const logDate = new Date(log.loggedAt)
-      return logDate.getDate() === now.getDate() &&
-             logDate.getMonth() === now.getMonth() &&
-             logDate.getFullYear() === now.getFullYear()
+      return logDate.getDate() === currentDate.getDate() &&
+             logDate.getMonth() === currentDate.getMonth() &&
+             logDate.getFullYear() === currentDate.getFullYear()
     })
-  }, [allLogs, mounted])
+  }, [allLogs, currentDate])
 
   const todayTotals = React.useMemo(() => {
     return todayLogs.reduce((acc, log) => {
@@ -230,7 +231,7 @@ export default function LogMealPage() {
 
   const categories: MealCategory[] = ["All", "Breakfast", "Lunch", "Snacks", "Dinner"]
 
-  if (!mounted) return null
+  if (!mounted || !currentDate) return null
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 md:space-y-8 animate-in fade-in duration-500">
@@ -500,7 +501,7 @@ export default function LogMealPage() {
           <DialogHeader className="p-8 pb-4">
             <DialogTitle className="text-3xl font-black">Daily Nutrition Overview</DialogTitle>
             <DialogDescription className="font-medium">
-              Status for {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
+              Status for {currentDate?.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
             </DialogDescription>
           </DialogHeader>
           

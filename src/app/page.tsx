@@ -30,9 +30,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
 import { DEFAULT_GOALS, FOOD_BY_ID } from "@/lib/mock-data"
 import { cn } from "@/lib/utils"
 import { 
@@ -50,8 +47,12 @@ export default function DashboardPage() {
   const db = useFirestore()
   const [mounted, setMounted] = React.useState(false)
 
+  // Use state to avoid hydration mismatch with dates
+  const [currentDate, setCurrentDate] = React.useState<Date | null>(null)
+
   React.useEffect(() => {
     setMounted(true)
+    setCurrentDate(new Date())
   }, [])
 
   const userProfileRef = useMemoFirebase(() => {
@@ -84,14 +85,13 @@ export default function DashboardPage() {
   }
 
   const todayTotals = React.useMemo(() => {
-    if (!allLogs || !mounted) return { calories: 0, protein: 0, carbs: 0, fats: 0 }
+    if (!allLogs || !currentDate) return { calories: 0, protein: 0, carbs: 0, fats: 0 }
     
-    const now = new Date()
     const todayLogs = allLogs.filter(log => {
       const logDate = new Date(log.loggedAt)
-      return logDate.getDate() === now.getDate() &&
-             logDate.getMonth() === now.getMonth() &&
-             logDate.getFullYear() === now.getFullYear()
+      return logDate.getDate() === currentDate.getDate() &&
+             logDate.getMonth() === currentDate.getMonth() &&
+             logDate.getFullYear() === currentDate.getFullYear()
     })
 
     return todayLogs.reduce((acc, log) => {
@@ -104,7 +104,7 @@ export default function DashboardPage() {
         fats: acc.fats + (food.fats * log.quantity),
       }
     }, { calories: 0, protein: 0, carbs: 0, fats: 0 })
-  }, [allLogs, mounted])
+  }, [allLogs, currentDate])
 
   const calorieTarget = userGoal?.targetCalories || DEFAULT_GOALS.calories
   const proteinTarget = userGoal ? Math.round(userGoal.targetCalories * (userGoal.targetProteinRatio || 0.2) / 4) : DEFAULT_GOALS.protein
@@ -114,12 +114,12 @@ export default function DashboardPage() {
   const macroData = React.useMemo(() => [
     { name: "Protein", value: todayTotals.protein, color: "hsl(var(--primary))" },
     { name: "Carbs", value: todayTotals.carbs, color: "hsl(var(--accent))" },
-    { name: "Fats", value: todayTotals.fats, color: "hsl(var(--chart-3))" },
+    { name: "Fats", value: todayTotals.chart3 || "hsl(var(--chart-3))", color: "hsl(var(--chart-3))" },
   ], [todayTotals])
 
   const totalMacros = todayTotals.protein + todayTotals.carbs + todayTotals.fats
 
-  if (!mounted) return null
+  if (!mounted || !currentDate) return null
 
   if (!user && !isUserLoading) {
     return (
