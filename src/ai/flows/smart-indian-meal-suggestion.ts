@@ -5,7 +5,6 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import {gemini15Flash} from '@genkit-ai/google-genai';
 
 const SmartIndianMealSuggestionInputSchema = z.object({
   dailyCalorieGoal: z.number().describe("The user's daily calorie target."),
@@ -48,21 +47,21 @@ export async function smartIndianMealSuggestion(input: SmartIndianMealSuggestion
   const apiKey = process.env.GOOGLE_GENAI_API_KEY || process.env.GOOGLE_API_KEY;
   
   if (!apiKey) {
-    throw new Error("API key missing. Ensure GOOGLE_GENAI_API_KEY is set in your Vercel Project Settings.");
+    throw new Error("API Key Missing: Please add GOOGLE_GENAI_API_KEY to your Vercel Environment Variables and redeploy.");
   }
 
   try {
     return await smartIndianMealSuggestionFlow(input);
   } catch (error: any) {
-    console.error("Genkit Flow Error:", error);
+    console.error("Smart Suggestion Error:", error);
     const message = error.message || "";
     
     if (message.includes('404') || message.includes('not found')) {
-      throw new Error("Model not found (404). This usually means the Gemini API is not enabled for your project or the region is unsupported. Check Google AI Studio settings.");
+      throw new Error("Model Not Found: This may be due to regional restrictions or API version mismatch. Ensure your API key is from a supported region in Google AI Studio.");
     }
     
     if (message.includes('403') || message.includes('API_KEY_INVALID')) {
-      throw new Error("Invalid API Key. Please verify your Gemini API key from Google AI Studio.");
+      throw new Error("Invalid API Key: Please verify your Gemini API key in Vercel settings.");
     }
 
     throw new Error(message || "The AI nutritionist encountered an issue generating your suggestions.");
@@ -71,7 +70,7 @@ export async function smartIndianMealSuggestion(input: SmartIndianMealSuggestion
 
 const prompt = ai.definePrompt({
   name: 'smartIndianMealSuggestionPrompt',
-  model: gemini15Flash,
+  model: 'googleai/gemini-1.5-flash',
   input: {schema: z.object({
     input: SmartIndianMealSuggestionInputSchema,
     remaining: z.object({
