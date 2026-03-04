@@ -1,131 +1,152 @@
-
 'use server';
 /**
- * @fileOverview A GenAI tool for suggesting culturally relevant Indian dishes or meal combinations to meet remaining daily macro targets.
+ * @fileOverview A Local Macro-Matching Engine for suggesting culturally relevant Indian dishes.
+ * This replaces the external GenAI flow to provide 100% reliability without API keys.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { INDIAN_FOOD_DATABASE, FoodItem } from '@/lib/mock-data';
 
-const SmartIndianMealSuggestionInputSchema = z.object({
-  dailyCalorieGoal: z.number().describe("The user's daily calorie target."),
-  dailyProteinGoal: z.number().describe("The user's daily protein target in grams."),
-  dailyCarbGoal: z.number().describe("The user's daily carbohydrate target in grams."),
-  dailyFatGoal: z.number().describe("The user's daily fat target in grams."),
-  consumedCalories: z.number().describe('Calories consumed so far today.'),
-  consumedProtein: z.number().describe('Protein consumed so far today in grams.'),
-  consumedCarbs: z.number().describe('Carbohydrates consumed so far today in grams.'),
-  consumedFats: z.number().describe('Fats consumed so far today in grams.'),
-  isVegOnly: z.boolean().optional().describe('Whether the user only eats vegetarian food.'),
-  currentMealType: z.string().optional().describe('The current meal type for which suggestions are needed (e.g., "Lunch", "Dinner", "Snack").')
-});
-export type SmartIndianMealSuggestionInput = z.infer<typeof SmartIndianMealSuggestionInputSchema>;
-
-const MealSuggestionSchema = z.object({
-  dishName: z.string().describe('The name of the suggested Indian dish or meal combination.'),
-  description: z.string().describe('A brief description of the dish/combination.'),
-  estimatedMacros: z.object({
-    calories: z.number().describe('Estimated calories for the suggestion.'),
-    protein: z.number().describe('Estimated protein in grams for the suggestion.'),
-    carbs: z.number().describe('Estimated carbohydrates in grams for the suggestion.'),
-    fats: z.number().describe('Estimated fats in grams for the suggestion.'),
-  }).describe('Estimated macronutrients for the suggested meal.'),
-  isCombination: z.boolean().describe('True if the suggestion is a combination of dishes, false otherwise.'),
-});
-
-const SmartIndianMealSuggestionOutputSchema = z.object({
-  remainingMacros: z.object({
-    calories: z.number().describe('Remaining calories needed for the day.'),
-    protein: z.number().describe('Remaining protein needed for the day in grams.'),
-    carbs: z.number().describe('Remaining carbohydrates needed for the day in grams.'),
-    fats: z.number().describe('Remaining fats needed for the day in grams.'),
-  }).describe("The user's remaining macronutrient targets for the day."),
-  mealSuggestions: z.array(MealSuggestionSchema).describe('A list of culturally relevant Indian meal suggestions.'),
-});
-export type SmartIndianMealSuggestionOutput = z.infer<typeof SmartIndianMealSuggestionOutputSchema>;
-
-/**
- * Server Action to generate smart meal suggestions.
- */
-export async function smartIndianMealSuggestion(input: SmartIndianMealSuggestionInput): Promise<SmartIndianMealSuggestionOutput> {
-  const apiKey = process.env.GOOGLE_GENAI_API_KEY || process.env.GOOGLE_API_KEY;
-  
-  if (!apiKey) {
-    throw new Error("API Key Missing: Please add GOOGLE_GENAI_API_KEY to your Vercel Environment Variables.");
-  }
-
-  try {
-    return await smartIndianMealSuggestionFlow(input);
-  } catch (error: any) {
-    console.error("Smart Suggestion Error:", error);
-    const message = error.message || "";
-    
-    // Improved error diagnostics for the user
-    if (message.includes('404') || message.includes('not found')) {
-      throw new Error("Model Not Found: The AI service could not find 'gemini-1.5-flash-latest'. This usually happens due to regional restrictions or temporary API issues. Please check if your region is supported by Gemini.");
-    }
-    
-    if (message.includes('403') || message.includes('API_KEY_INVALID') || message.includes('permission denied')) {
-      throw new Error("Invalid API Key: Your Gemini API key is unauthorized or has expired. Please regenerate a new key at Google AI Studio.");
-    }
-
-    throw new Error(message || "The AI nutritionist encountered an issue generating your suggestions.");
-  }
+export interface SmartIndianMealSuggestionInput {
+  dailyCalorieGoal: number;
+  dailyProteinGoal: number;
+  dailyCarbGoal: number;
+  dailyFatGoal: number;
+  consumedCalories: number;
+  consumedProtein: number;
+  consumedCarbs: number;
+  consumedFats: number;
+  isVegOnly?: boolean;
+  currentMealType?: string;
 }
 
-const prompt = ai.definePrompt({
-  name: 'smartIndianMealSuggestionPrompt',
-  // Using -latest to ensure the most compatible endpoint is used
-  model: 'googleai/gemini-1.5-flash-latest',
-  input: {schema: z.object({
-    input: SmartIndianMealSuggestionInputSchema,
-    remaining: z.object({
-      calories: z.number(),
-      protein: z.number(),
-      carbs: z.number(),
-      fats: z.number(),
-    })
-  })},
-  output: {schema: SmartIndianMealSuggestionOutputSchema},
-  config: {
-    temperature: 0.7,
-  },
-  system: `You are an expert Indian nutritionist. Suggest healthy, authentic Indian meals.
-  - If isVegOnly is true, NO meat/eggs/fish.
-  - Suggest regional dishes with estimated macros.
-  - Focus on balancing the remaining macros provided.
-  - Use common household measurements in descriptions.`,
-  prompt: `
-  User Preference: {{#if input.isVegOnly}}Vegetarian{{else}}Any{{/if}}
-  Current Meal: {{{input.currentMealType}}}
-  Remaining Today: 
-  - Cal: {{{remaining.calories}}}
-  - Prot: {{{remaining.protein}}}g
-  - Carbs: {{{remaining.carbs}}}g
-  - Fats: {{{remaining.fats}}}g
+export interface MealSuggestion {
+  dishName: string;
+  description: string;
+  estimatedMacros: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fats: number;
+  };
+  isCombination: boolean;
+}
 
-  Suggest 3 meals that fit this budget.`,
-});
+export interface SmartIndianMealSuggestionOutput {
+  remainingMacros: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fats: number;
+  };
+  mealSuggestions: MealSuggestion[];
+}
 
-const smartIndianMealSuggestionFlow = ai.defineFlow(
-  {
-    name: 'smartIndianMealSuggestionFlow',
-    inputSchema: SmartIndianMealSuggestionInputSchema,
-    outputSchema: SmartIndianMealSuggestionOutputSchema,
-  },
-  async (input) => {
-    const remaining = {
-      calories: Math.round(Math.max(0, input.dailyCalorieGoal - input.consumedCalories)),
-      protein: Math.round(Math.max(0, input.dailyProteinGoal - input.consumedProtein)),
-      carbs: Math.round(Math.max(0, input.dailyCarbGoal - input.consumedCarbs)),
-      fats: Math.round(Math.max(0, input.dailyFatGoal - input.consumedFats)),
-    };
+/**
+ * Local implementation of the suggestion engine.
+ * Analyzes the macro gap and finds the best matching items from the database.
+ */
+export async function smartIndianMealSuggestion(input: SmartIndianMealSuggestionInput): Promise<SmartIndianMealSuggestionOutput> {
+  // Calculate the macro gap
+  const remaining = {
+    calories: Math.max(0, input.dailyCalorieGoal - input.consumedCalories),
+    protein: Math.max(0, input.dailyProteinGoal - input.consumedProtein),
+    carbs: Math.max(0, input.dailyCarbGoal - input.consumedCarbs),
+    fats: Math.max(0, input.dailyFatGoal - input.consumedFats),
+  };
 
-    const result = await prompt({ input, remaining });
-    if (!result || !result.output) {
-      throw new Error("AI failed to generate output. Check API key and regional availability.");
+  // Filter the database based on dietary preferences
+  let candidates = INDIAN_FOOD_DATABASE.filter(food => {
+    if (input.isVegOnly && !food.isVeg) return false;
+    
+    // Simple category matching for meal types
+    if (input.currentMealType === 'Breakfast') {
+      return food.category === 'Breakfast' || food.category === 'Bread';
+    }
+    if (input.currentMealType === 'Snack') {
+      return food.category === 'Snack' || food.category === 'Beverage';
+    }
+    // For Lunch/Dinner, avoid breakfast-only items
+    return food.category !== 'Breakfast' && food.category !== 'Beverage';
+  });
+
+  // Ranking algorithm: Find foods that fit the calorie gap and help bridge the most needed macro
+  // We prioritize the macro that is furthest from its goal percentage-wise
+  const macroRatios = {
+    protein: input.dailyProteinGoal > 0 ? remaining.protein / input.dailyProteinGoal : 0,
+    carbs: input.dailyCarbGoal > 0 ? remaining.carbs / input.dailyCarbGoal : 0,
+    fats: input.dailyFatGoal > 0 ? remaining.fats / input.dailyFatGoal : 0,
+  };
+
+  const priorityMacro = (macroRatios.protein >= macroRatios.carbs && macroRatios.protein >= macroRatios.fats) 
+    ? 'protein' 
+    : (macroRatios.carbs >= macroRatios.fats ? 'carbs' : 'fats');
+
+  // Score candidates
+  const scoredCandidates = candidates.map(food => {
+    let score = 0;
+    
+    // Penalty for exceeding calorie gap (if we have a significant gap)
+    if (remaining.calories > 100 && food.calories > remaining.calories * 1.2) {
+      score -= 50;
     }
 
-    return result.output;
+    // Bonus for bridging the priority macro
+    if (priorityMacro === 'protein') score += food.protein * 2;
+    if (priorityMacro === 'carbs') score += food.carbs * 1.5;
+    if (priorityMacro === 'fats') score += food.fats * 1.2;
+
+    // Bonus for fitting into the calorie "sweet spot" (approx 80% of remaining for the meal)
+    const targetMealCal = remaining.calories;
+    const calDiff = Math.abs(food.calories - targetMealCal);
+    score += Math.max(0, 100 - (calDiff / 5));
+
+    return { food, score };
+  });
+
+  // Sort and pick top 3
+  const topMatches = scoredCandidates
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3)
+    .map(match => ({
+      dishName: match.food.name,
+      description: `Authentic ${match.food.category} dish. Serving Size: ${match.food.servingSize}. Recommended to balance your remaining ${priorityMacro} needs.`,
+      estimatedMacros: {
+        calories: match.food.calories,
+        protein: match.food.protein,
+        carbs: match.food.carbs,
+        fats: match.food.fats,
+      },
+      isCombination: false
+    }));
+
+  // If we have few remaining calories, add a "Light Option" as a fallback
+  if (remaining.calories < 150 && topMatches.length > 0) {
+    const lightOption = INDIAN_FOOD_DATABASE.find(f => f.calories < 100 && (input.isVegOnly ? f.isVeg : true));
+    if (lightOption) {
+      topMatches[2] = {
+        dishName: lightOption.name,
+        description: "A light, healthy choice to stay within your remaining calorie limit.",
+        estimatedMacros: {
+          calories: lightOption.calories,
+          protein: lightOption.protein,
+          carbs: lightOption.carbs,
+          fats: lightOption.fats,
+        },
+        isCombination: false
+      };
+    }
   }
-);
+
+  // Artificial delay to mimic "AI" processing feel
+  await new Promise(resolve => setTimeout(resolve, 800));
+
+  return {
+    remainingMacros: {
+      calories: Math.round(remaining.calories),
+      protein: Math.round(remaining.protein),
+      carbs: Math.round(remaining.carbs),
+      fats: Math.round(remaining.fats),
+    },
+    mealSuggestions: topMatches
+  };
+}

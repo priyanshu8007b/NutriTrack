@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Sparkles, Loader2, Info, CheckCircle2, Utensils, Zap, Target, AlertCircle } from "lucide-react"
+import { Sparkles, Loader2, Info, CheckCircle2, Utensils, Zap, Target, AlertCircle, Cpu } from "lucide-react"
 import { smartIndianMealSuggestion, SmartIndianMealSuggestionOutput } from "@/ai/flows/smart-indian-meal-suggestion"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -113,16 +113,16 @@ export default function SuggestionsPage() {
       
       setResult(output)
       toast({
-        title: "Suggestions Ready",
-        description: `Found fresh Indian options for your ${mealType}.`,
+        title: "Analysis Complete",
+        description: `Macro-matched options found for your ${mealType}.`,
       })
     } catch (err: any) {
-      console.error("Suggestion Error:", err)
-      const msg = err.message || "An unexpected error occurred."
+      console.error("Analysis Error:", err)
+      const msg = err.message || "An unexpected error occurred during macro analysis."
       setError(msg)
       toast({
         variant: "destructive",
-        title: "Generation Failed",
+        title: "Analysis Failed",
         description: msg,
       })
     } finally {
@@ -143,8 +143,8 @@ export default function SuggestionsPage() {
       <header className="space-y-4">
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="px-3 py-1 border-primary/30 bg-primary/5 text-primary font-black uppercase tracking-widest text-[10px] flex items-center gap-1.5">
-            <Zap className="w-3 h-3 fill-primary" />
-            GenAI Powered
+            <Cpu className="w-3 h-3" />
+            Macro-Engine v2.0
           </Badge>
           {userProfile?.isVegOnly && (
             <Badge variant="outline" className="px-3 py-1 border-green-500/30 bg-green-50 text-green-700 font-black uppercase tracking-widest text-[10px]">
@@ -154,10 +154,10 @@ export default function SuggestionsPage() {
         </div>
         <div className="space-y-2">
           <h1 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">
-            Smart Indian Suggestions
+            Smart Macro Matching
           </h1>
           <p className="text-muted-foreground text-lg md:text-xl max-w-2xl font-medium leading-relaxed">
-            AI-crafted Indian meals based on your real-time macro balance.
+            Instant Indian meal recommendations tailored to your daily nutritional gaps.
           </p>
         </div>
       </header>
@@ -165,7 +165,7 @@ export default function SuggestionsPage() {
       {error && (
         <Alert variant="destructive" className="rounded-2xl border-destructive/20 bg-destructive/5 mb-8">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Suggestion Error</AlertTitle>
+          <AlertTitle>System Error</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
@@ -176,13 +176,13 @@ export default function SuggestionsPage() {
             <CardHeader className="pb-4">
               <CardTitle className="text-xl font-bold flex items-center gap-2">
                 <Utensils className="w-5 h-5 text-primary" />
-                Preferences
+                Next Meal Goal
               </CardTitle>
-              <CardDescription>Tailor your next authentic meal</CardDescription>
+              <CardDescription>Targeted nutrition for your next dish</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-3">
-                <label className="text-sm font-bold text-foreground/80 uppercase tracking-tight">What's your next meal?</label>
+                <label className="text-sm font-bold text-foreground/80 uppercase tracking-tight">Select Meal Type</label>
                 <Select value={mealType} onValueChange={setMealType}>
                   <SelectTrigger className="h-12 border-border/50 bg-secondary/20 focus:ring-primary/20 transition-all">
                     <SelectValue placeholder="Select meal type" />
@@ -204,11 +204,11 @@ export default function SuggestionsPage() {
                   {loading ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      Crafting Menu...
+                      Analyzing Gaps...
                     </>
                   ) : (
                     <>
-                      Get Smart Suggestion
+                      Match Best Dishes
                       <Sparkles className="w-5 h-5 group-hover:rotate-12 transition-transform" />
                     </>
                   )}
@@ -219,7 +219,7 @@ export default function SuggestionsPage() {
                 <div className="flex gap-3">
                   <Info className="w-5 h-5 text-primary shrink-0" />
                   <p className="text-[11px] text-muted-foreground leading-relaxed font-medium">
-                    Suggestions consider your <strong>logged calories</strong> ({Math.round(todayTotals.calories)}) and <strong>macro balance</strong>.
+                    Calculated based on <strong>{Math.round(todayTotals.calories)} logged kcal</strong>. No external AI APIs required for this engine.
                   </p>
                 </div>
               </div>
@@ -230,7 +230,7 @@ export default function SuggestionsPage() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-black flex items-center gap-2">
                 <Target className="w-4 h-4" />
-                Current Status
+                Intake Summary
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -263,12 +263,12 @@ export default function SuggestionsPage() {
           {!result && !loading && !error && (
             <div className="flex flex-col items-center justify-center py-24 text-center space-y-6 bg-secondary/10 rounded-[2.5rem] border border-dashed border-border/50 px-8">
               <div className="w-20 h-20 rounded-3xl bg-white flex items-center justify-center shadow-lg transform -rotate-3">
-                <Utensils className="w-10 h-10 text-muted-foreground/30" />
+                <Cpu className="w-10 h-10 text-muted-foreground/30" />
               </div>
               <div className="max-w-md space-y-2">
-                <p className="text-2xl font-black text-foreground">Waiting for your request</p>
+                <p className="text-2xl font-black text-foreground">Select Meal for Matching</p>
                 <p className="text-muted-foreground font-medium">
-                  Select a meal type and click the button to see AI recommendations tailored to your goals.
+                  Our advanced rule-based matching engine will find the best items from our 1,000+ dish database to fill your nutritional gaps.
                 </p>
               </div>
             </div>
@@ -279,12 +279,12 @@ export default function SuggestionsPage() {
               <div className="relative">
                 <div className="w-24 h-24 rounded-full border-[6px] border-primary/10 border-t-primary animate-spin" />
                 <div className="absolute inset-0 m-auto w-12 h-12 rounded-full bg-primary/5 flex items-center justify-center">
-                  <Sparkles className="w-6 h-6 text-primary animate-pulse" />
+                  <Cpu className="w-6 h-6 text-primary animate-pulse" />
                 </div>
               </div>
               <div className="space-y-2">
-                <p className="text-2xl font-black text-foreground tracking-tight">Balancing Macros...</p>
-                <p className="text-muted-foreground font-medium animate-pulse">Our nutritionist AI is crafting your menu.</p>
+                <p className="text-2xl font-black text-foreground tracking-tight">Processing Macros...</p>
+                <p className="text-muted-foreground font-medium animate-pulse">Running advanced dish-to-gap correlation.</p>
               </div>
             </div>
           )}
@@ -311,16 +311,14 @@ export default function SuggestionsPage() {
               <div className="grid grid-cols-1 gap-8">
                 {result.mealSuggestions.map((suggestion, idx) => (
                   <Card key={idx} className="group shadow-md hover:shadow-2xl border-border/50 transition-all duration-500 overflow-hidden rounded-[2rem]">
-                    <div className="flex flex-col md:flex-row min-h-[300px]">
+                    <div className="flex flex-col md:flex-row min-h-[250px]">
                       <div className="md:w-1/3 bg-secondary/30 relative flex items-center justify-center p-12">
                         <Utensils className="w-20 h-20 text-primary/20 transition-transform duration-700 relative z-10" />
-                        {suggestion.isCombination && (
-                          <div className="absolute top-6 left-6">
-                            <Badge className="bg-accent text-accent-foreground font-black uppercase tracking-tighter text-[10px] px-3 py-1">
-                              Balanced Combo
-                            </Badge>
-                          </div>
-                        )}
+                        <div className="absolute top-6 left-6">
+                          <Badge className="bg-primary text-primary-foreground font-black uppercase tracking-tighter text-[10px] px-3 py-1">
+                            Engine Match #{idx + 1}
+                          </Badge>
+                        </div>
                       </div>
                       <div className="md:w-2/3 p-8 md:p-10 flex flex-col justify-between space-y-8">
                         <div className="space-y-4">
@@ -342,23 +340,6 @@ export default function SuggestionsPage() {
                     </div>
                   </Card>
                 ))}
-              </div>
-            </div>
-          )}
-
-          {error && !loading && (
-            <div className="flex flex-col items-center justify-center py-24 text-center space-y-6 bg-destructive/5 rounded-[2.5rem] border border-dashed border-destructive/20 px-8">
-              <div className="w-20 h-20 rounded-3xl bg-white flex items-center justify-center shadow-lg">
-                <AlertCircle className="w-10 h-10 text-destructive/30" />
-              </div>
-              <div className="max-w-md space-y-2">
-                <p className="text-2xl font-black text-foreground">Generation Failed</p>
-                <p className="text-muted-foreground font-medium">
-                  We encountered an issue while crafting your menu. Please check your AI configuration and try again.
-                </p>
-                <Button variant="outline" className="mt-4 font-bold" onClick={handleSuggest}>
-                  Retry Request
-                </Button>
               </div>
             </div>
           )}
