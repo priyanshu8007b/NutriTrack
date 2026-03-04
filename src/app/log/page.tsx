@@ -118,9 +118,6 @@ export default function LogMealPage() {
 
   const totalCaloriesToday = todayTotals.calories + currentPlateTotals.calories
   const calorieTarget = userGoal?.targetCalories || 2000
-  const proteinTarget = userGoal ? Math.round(userGoal.targetCalories * userGoal.targetProteinRatio / 4) : 100
-  const carbsTarget = userGoal ? Math.round(userGoal.targetCalories * userGoal.targetCarbsRatio / 4) : 250
-  const fatsTarget = userGoal ? Math.round(userGoal.targetCalories * userGoal.targetFatsRatio / 9) : 65
 
   const handleVegToggle = (checked: boolean) => {
     if (!db || !user?.uid) return

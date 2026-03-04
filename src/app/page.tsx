@@ -9,7 +9,6 @@ import {
   Plus,
   Utensils,
   LogIn,
-  Leaf,
   Salad,
   ChevronRight
 } from "lucide-react"
@@ -232,7 +231,7 @@ export default function DashboardPage() {
             {allLogs && allLogs.length > 0 ? (
                <div className="h-[300px] w-full">
                  <ResponsiveContainer width="100%" height="100%">
-                   <BarChart data={processWeeklyData(allLogs)}>
+                   <BarChart data={processWeeklyData(allLogs, currentDate)}>
                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                      <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fontWeight: 600 }} dy={10} />
                      <YAxis hide />
@@ -367,12 +366,12 @@ export default function DashboardPage() {
   )
 }
 
-function processWeeklyData(logs: any[]) {
+function processWeeklyData(logs: any[], now: Date | null) {
+  if (!now) return []
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
   const weekly = days.map(day => ({ day, calories: 0 }))
   
-  const now = new Date()
-  const sevenDaysAgo = new Date()
+  const sevenDaysAgo = new Date(now)
   sevenDaysAgo.setDate(now.getDate() - 7)
 
   logs.forEach(log => {
