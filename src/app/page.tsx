@@ -30,6 +30,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
+import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { DEFAULT_GOALS, FOOD_BY_ID } from "@/lib/mock-data"
 import { cn } from "@/lib/utils"
 import { 
@@ -46,8 +48,6 @@ export default function DashboardPage() {
   const { user, isUserLoading } = useUser()
   const db = useFirestore()
   const [mounted, setMounted] = React.useState(false)
-
-  // Use state to avoid hydration mismatch with dates
   const [currentDate, setCurrentDate] = React.useState<Date | null>(null)
 
   React.useEffect(() => {
@@ -114,7 +114,7 @@ export default function DashboardPage() {
   const macroData = React.useMemo(() => [
     { name: "Protein", value: todayTotals.protein, color: "hsl(var(--primary))" },
     { name: "Carbs", value: todayTotals.carbs, color: "hsl(var(--accent))" },
-    { name: "Fats", value: todayTotals.chart3 || "hsl(var(--chart-3))", color: "hsl(var(--chart-3))" },
+    { name: "Fats", value: todayTotals.fats, color: "hsl(var(--chart-3))" },
   ], [todayTotals])
 
   const totalMacros = todayTotals.protein + todayTotals.carbs + todayTotals.fats
