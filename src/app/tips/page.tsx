@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -59,7 +58,7 @@ const ALL_TIPS = [
 export default function TipsPage() {
   const [randomTips, setRandomTips] = React.useState<typeof ALL_TIPS>([])
 
-  useEffect(() => {
+  React.useEffect(() => {
     // Shuffle and pick 4 tips to display
     const shuffled = [...ALL_TIPS].sort(() => 0.5 - Math.random())
     setRandomTips(shuffled.slice(0, 4))
