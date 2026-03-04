@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Sparkles, Loader2, Info, CheckCircle2, Utensils, Zap, Target, AlertCircle, Cpu } from "lucide-react"
+import { Sparkles, Loader2, Info, CheckCircle2, Utensils, Zap, Target, AlertCircle, Cpu, Scale } from "lucide-react"
 import { smartIndianMealSuggestion, SmartIndianMealSuggestionOutput } from "@/ai/flows/smart-indian-meal-suggestion"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -114,17 +114,11 @@ export default function SuggestionsPage() {
       setResult(output)
       toast({
         title: "Analysis Complete",
-        description: `Macro-matched options found for your ${mealType}.`,
+        description: `Suggestions calculated for your ${mealType}.`,
       })
     } catch (err: any) {
-      console.error("Analysis Error:", err)
-      const msg = err.message || "An unexpected error occurred during macro analysis."
+      const msg = err.message || "An unexpected error occurred."
       setError(msg)
-      toast({
-        variant: "destructive",
-        title: "Analysis Failed",
-        description: msg,
-      })
     } finally {
       setLoading(false)
     }
@@ -144,11 +138,11 @@ export default function SuggestionsPage() {
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="px-3 py-1 border-primary/30 bg-primary/5 text-primary font-black uppercase tracking-widest text-[10px] flex items-center gap-1.5">
             <Cpu className="w-3 h-3" />
-            Macro-Engine v2.0
+            Nutri-Engine v2.0
           </Badge>
           {userProfile?.isVegOnly && (
             <Badge variant="outline" className="px-3 py-1 border-green-500/30 bg-green-50 text-green-700 font-black uppercase tracking-widest text-[10px]">
-              Veg Only Enabled
+              Veg Only Mode
             </Badge>
           )}
         </div>
@@ -157,18 +151,10 @@ export default function SuggestionsPage() {
             Smart Macro Matching
           </h1>
           <p className="text-muted-foreground text-lg md:text-xl max-w-2xl font-medium leading-relaxed">
-            Instant Indian meal recommendations tailored to your daily nutritional gaps.
+            Personalized Indian meal recommendations based on your remaining daily nutrition gaps.
           </p>
         </div>
       </header>
-
-      {error && (
-        <Alert variant="destructive" className="rounded-2xl border-destructive/20 bg-destructive/5 mb-8">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>System Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         <div className="lg:col-span-4 space-y-6">
@@ -204,11 +190,11 @@ export default function SuggestionsPage() {
                   {loading ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      Analyzing Gaps...
+                      Matching Dishes...
                     </>
                   ) : (
                     <>
-                      Match Best Dishes
+                      Calculate Best Fits
                       <Sparkles className="w-5 h-5 group-hover:rotate-12 transition-transform" />
                     </>
                   )}
@@ -219,7 +205,7 @@ export default function SuggestionsPage() {
                 <div className="flex gap-3">
                   <Info className="w-5 h-5 text-primary shrink-0" />
                   <p className="text-[11px] text-muted-foreground leading-relaxed font-medium">
-                    Calculated based on <strong>{Math.round(todayTotals.calories)} logged kcal</strong>. No external AI APIs required for this engine.
+                    Our matching engine analyzes <strong>1,000+ authentic Indian items</strong> to find the best macro-balanced options for your current profile.
                   </p>
                 </div>
               </div>
@@ -230,7 +216,7 @@ export default function SuggestionsPage() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-black flex items-center gap-2">
                 <Target className="w-4 h-4" />
-                Intake Summary
+                Current Progress
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -239,18 +225,18 @@ export default function SuggestionsPage() {
                   <span>Calories</span>
                   <span>{Math.round(todayTotals.calories)} / {calorieTarget}</span>
                 </div>
-                <Progress value={(todayTotals.calories / calorieTarget) * 100} className="h-1" />
+                <Progress value={(todayTotals.calories / calorieTarget) * 100} className="h-1.5" />
               </div>
               <div className="grid grid-cols-3 gap-2">
-                <div className="text-center">
+                <div className="text-center p-2 bg-secondary/10 rounded-lg">
                   <span className="block text-[8px] font-black uppercase text-muted-foreground">Prot</span>
                   <span className="text-xs font-bold text-accent">{Math.round(todayTotals.protein)}g</span>
                 </div>
-                <div className="text-center">
+                <div className="text-center p-2 bg-secondary/10 rounded-lg">
                   <span className="block text-[8px] font-black uppercase text-muted-foreground">Carb</span>
                   <span className="text-xs font-bold">{Math.round(todayTotals.carbs)}g</span>
                 </div>
-                <div className="text-center">
+                <div className="text-center p-2 bg-secondary/10 rounded-lg">
                   <span className="block text-[8px] font-black uppercase text-muted-foreground">Fat</span>
                   <span className="text-xs font-bold">{Math.round(todayTotals.fats)}g</span>
                 </div>
@@ -266,9 +252,9 @@ export default function SuggestionsPage() {
                 <Cpu className="w-10 h-10 text-muted-foreground/30" />
               </div>
               <div className="max-w-md space-y-2">
-                <p className="text-2xl font-black text-foreground">Select Meal for Matching</p>
+                <p className="text-2xl font-black text-foreground">Awaiting Input</p>
                 <p className="text-muted-foreground font-medium">
-                  Our advanced rule-based matching engine will find the best items from our 1,000+ dish database to fill your nutritional gaps.
+                  Select a meal type to generate targeted suggestions from our pan-India database.
                 </p>
               </div>
             </div>
@@ -282,10 +268,7 @@ export default function SuggestionsPage() {
                   <Cpu className="w-6 h-6 text-primary animate-pulse" />
                 </div>
               </div>
-              <div className="space-y-2">
-                <p className="text-2xl font-black text-foreground tracking-tight">Processing Macros...</p>
-                <p className="text-muted-foreground font-medium animate-pulse">Running advanced dish-to-gap correlation.</p>
-              </div>
+              <p className="text-2xl font-black text-foreground tracking-tight">Finding Best Matches...</p>
             </div>
           )}
 
@@ -295,12 +278,12 @@ export default function SuggestionsPage() {
                 <CardHeader className="bg-primary/5 border-b border-primary/10 py-4">
                   <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4" />
-                    Target Gap Analysis
+                    Recommended Targets
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-8 pb-8 px-8">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                    <MacroStat label="Remaining Cal" value={result.remainingMacros.calories} unit="kcal" color="primary" />
+                    <MacroStat label="Target Cal" value={result.remainingMacros.calories} unit="kcal" color="primary" />
                     <MacroStat label="Target Protein" value={result.remainingMacros.protein} unit="g" color="accent" />
                     <MacroStat label="Target Carbs" value={result.remainingMacros.carbs} unit="g" color="foreground" />
                     <MacroStat label="Target Fats" value={result.remainingMacros.fats} unit="g" color="foreground" />
@@ -310,28 +293,34 @@ export default function SuggestionsPage() {
 
               <div className="grid grid-cols-1 gap-8">
                 {result.mealSuggestions.map((suggestion, idx) => (
-                  <Card key={idx} className="group shadow-md hover:shadow-2xl border-border/50 transition-all duration-500 overflow-hidden rounded-[2rem]">
-                    <div className="flex flex-col md:flex-row min-h-[250px]">
-                      <div className="md:w-1/3 bg-secondary/30 relative flex items-center justify-center p-12">
-                        <Utensils className="w-20 h-20 text-primary/20 transition-transform duration-700 relative z-10" />
-                        <div className="absolute top-6 left-6">
-                          <Badge className="bg-primary text-primary-foreground font-black uppercase tracking-tighter text-[10px] px-3 py-1">
-                            Engine Match #{idx + 1}
+                  <Card key={idx} className="group shadow-md hover:shadow-xl border-border/50 transition-all duration-500 overflow-hidden rounded-[2rem]">
+                    <div className="flex flex-col md:flex-row min-h-[200px]">
+                      <div className="md:w-1/4 bg-secondary/30 relative flex items-center justify-center p-8">
+                        <Utensils className="w-16 h-16 text-primary/20 transition-transform duration-700 relative z-10" />
+                        <div className="absolute top-4 left-4">
+                          <Badge className="bg-primary text-primary-foreground font-black uppercase tracking-tighter text-[9px] px-2 py-0.5">
+                            Match #{idx + 1}
                           </Badge>
                         </div>
                       </div>
-                      <div className="md:w-2/3 p-8 md:p-10 flex flex-col justify-between space-y-8">
+                      <div className="md:w-3/4 p-8 flex flex-col justify-between space-y-6">
                         <div className="space-y-4">
-                          <h3 className="text-3xl font-black text-foreground leading-tight">
-                            {suggestion.dishName}
-                          </h3>
-                          <p className="text-muted-foreground font-medium text-lg leading-relaxed">
+                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <h3 className="text-2xl font-black text-foreground leading-tight">
+                              {suggestion.dishName}
+                            </h3>
+                            <Badge variant="secondary" className="w-fit h-fit px-4 py-1.5 rounded-full bg-accent/10 text-accent font-black text-xs border-accent/20 flex items-center gap-2">
+                              <Scale className="w-3.5 h-3.5" />
+                              {suggestion.servings} Servings (Size: {suggestion.servingSize})
+                            </Badge>
+                          </div>
+                          <p className="text-muted-foreground font-medium text-base leading-relaxed">
                             {suggestion.description}
                           </p>
                         </div>
                         
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                          <MacroValue label="Calories" value={suggestion.estimatedMacros.calories} unit="kcal" highlight />
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-border/30">
+                          <MacroValue label="Total Cal" value={suggestion.estimatedMacros.calories} unit="kcal" highlight />
                           <MacroValue label="Protein" value={suggestion.estimatedMacros.protein} unit="g" />
                           <MacroValue label="Carbs" value={suggestion.estimatedMacros.carbs} unit="g" />
                           <MacroValue label="Fats" value={suggestion.estimatedMacros.fats} unit="g" />
@@ -350,7 +339,6 @@ export default function SuggestionsPage() {
 }
 
 function MacroStat({ label, value, unit, color }: any) {
-  const isPositive = value > 0;
   return (
     <div className="flex flex-col space-y-1">
       <span className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground">{label}</span>
@@ -359,7 +347,7 @@ function MacroStat({ label, value, unit, color }: any) {
           "text-3xl font-black",
           color === "primary" ? "text-primary" : color === "accent" ? "text-accent" : "text-foreground"
         )}>
-          {isPositive ? Math.round(value) : 0}
+          {Math.max(0, Math.round(value))}
         </span>
         <span className="text-xs font-bold text-muted-foreground/60">{unit}</span>
       </div>
@@ -373,7 +361,7 @@ function MacroValue({ label, value, unit, highlight }: any) {
       "text-center p-3 rounded-2xl border border-border/50 bg-secondary/5",
       highlight && "bg-primary/5 border-primary/20"
     )}>
-      <span className="block text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 mb-1">{label}</span>
+      <span className="block text-[9px] font-black uppercase tracking-widest text-muted-foreground/70 mb-1">{label}</span>
       <div className="flex items-baseline justify-center gap-0.5">
         <span className={cn("text-lg font-black", highlight ? "text-primary" : "text-foreground")}>{Math.round(value)}</span>
         <span className="text-[10px] font-bold text-muted-foreground/50">{unit}</span>

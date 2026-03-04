@@ -1,10 +1,10 @@
 'use server';
 /**
  * @fileOverview A Local Macro-Matching Engine for suggesting culturally relevant Indian dishes.
- * This replaces the external GenAI flow to provide 100% reliability without API keys.
+ * This provides 100% reliability without external API dependencies.
  */
 
-import { INDIAN_FOOD_DATABASE, FoodItem } from '@/lib/mock-data';
+import { INDIAN_FOOD_DATABASE } from '@/lib/mock-data';
 
 export interface SmartIndianMealSuggestionInput {
   dailyCalorieGoal: number;
@@ -22,6 +22,8 @@ export interface SmartIndianMealSuggestionInput {
 export interface MealSuggestion {
   dishName: string;
   description: string;
+  servings: number;
+  servingSize: string;
   estimatedMacros: {
     calories: number;
     protein: number;
@@ -70,7 +72,6 @@ export async function smartIndianMealSuggestion(input: SmartIndianMealSuggestion
   });
 
   // Ranking algorithm: Find foods that fit the calorie gap and help bridge the most needed macro
-  // We prioritize the macro that is furthest from its goal percentage-wise
   const macroRatios = {
     protein: input.dailyProteinGoal > 0 ? remaining.protein / input.dailyProteinGoal : 0,
     carbs: input.dailyCarbGoal > 0 ? remaining.carbs / input.dailyCarbGoal : 0,
@@ -85,22 +86,29 @@ export async function smartIndianMealSuggestion(input: SmartIndianMealSuggestion
   const scoredCandidates = candidates.map(food => {
     let score = 0;
     
-    // Penalty for exceeding calorie gap (if we have a significant gap)
-    if (remaining.calories > 100 && food.calories > remaining.calories * 1.2) {
-      score -= 50;
+    // Calculate ideal servings to fill calorie gap (clamped between 0.5 and 2.5)
+    let idealServings = 1;
+    if (remaining.calories > 0) {
+      idealServings = Math.min(2.5, Math.max(0.5, Math.round((remaining.calories / food.calories) * 2) / 2));
     }
 
-    // Bonus for bridging the priority macro
-    if (priorityMacro === 'protein') score += food.protein * 2;
-    if (priorityMacro === 'carbs') score += food.carbs * 1.5;
-    if (priorityMacro === 'fats') score += food.fats * 1.2;
+    const totalCalories = food.calories * idealServings;
 
-    // Bonus for fitting into the calorie "sweet spot" (approx 80% of remaining for the meal)
-    const targetMealCal = remaining.calories;
-    const calDiff = Math.abs(food.calories - targetMealCal);
-    score += Math.max(0, 100 - (calDiff / 5));
+    // Penalty for significantly exceeding calorie gap
+    if (remaining.calories > 50 && totalCalories > remaining.calories * 1.3) {
+      score -= 100;
+    }
 
-    return { food, score };
+    // Bonus for bridging the priority macro (weighted by servings)
+    if (priorityMacro === 'protein') score += (food.protein * idealServings) * 3;
+    if (priorityMacro === 'carbs') score += (food.carbs * idealServings) * 1.5;
+    if (priorityMacro === 'fats') score += (food.fats * idealServings) * 1.2;
+
+    // Bonus for fitting into the calorie "sweet spot"
+    const calDiff = Math.abs(totalCalories - remaining.calories);
+    score += Math.max(0, 150 - (calDiff / 3));
+
+    return { food, score, idealServings };
   });
 
   // Sort and pick top 3
@@ -109,36 +117,20 @@ export async function smartIndianMealSuggestion(input: SmartIndianMealSuggestion
     .slice(0, 3)
     .map(match => ({
       dishName: match.food.name,
-      description: `Authentic ${match.food.category} dish. Serving Size: ${match.food.servingSize}. Recommended to balance your remaining ${priorityMacro} needs.`,
+      description: `Authentic ${match.food.category} match. High in ${priorityMacro} to balance your remaining daily needs.`,
+      servings: match.idealServings,
+      servingSize: match.food.servingSize,
       estimatedMacros: {
-        calories: match.food.calories,
-        protein: match.food.protein,
-        carbs: match.food.carbs,
-        fats: match.food.fats,
+        calories: Math.round(match.food.calories * match.idealServings),
+        protein: Math.round(match.food.protein * match.idealServings),
+        carbs: Math.round(match.food.carbs * match.idealServings),
+        fats: Math.round(match.food.fats * match.idealServings),
       },
       isCombination: false
     }));
 
-  // If we have few remaining calories, add a "Light Option" as a fallback
-  if (remaining.calories < 150 && topMatches.length > 0) {
-    const lightOption = INDIAN_FOOD_DATABASE.find(f => f.calories < 100 && (input.isVegOnly ? f.isVeg : true));
-    if (lightOption) {
-      topMatches[2] = {
-        dishName: lightOption.name,
-        description: "A light, healthy choice to stay within your remaining calorie limit.",
-        estimatedMacros: {
-          calories: lightOption.calories,
-          protein: lightOption.protein,
-          carbs: lightOption.carbs,
-          fats: lightOption.fats,
-        },
-        isCombination: false
-      };
-    }
-  }
-
-  // Artificial delay to mimic "AI" processing feel
-  await new Promise(resolve => setTimeout(resolve, 800));
+  // Artificial delay to mimic "Processing" feel
+  await new Promise(resolve => setTimeout(resolve, 600));
 
   return {
     remainingMacros: {
