@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -20,13 +19,9 @@ import {
   BarChart, 
   Bar, 
   XAxis, 
-  YAxis, 
   CartesianGrid, 
   Tooltip, 
-  ResponsiveContainer,
-  Cell,
-  PieChart,
-  Pie
+  ResponsiveContainer
 } from "recharts"
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -110,14 +105,6 @@ export default function DashboardPage() {
   const proteinTarget = userGoal ? Math.round(userGoal.targetCalories * (userGoal.targetProteinRatio || 0.2) / 4) : DEFAULT_GOALS.protein
   const carbsTarget = userGoal ? Math.round(userGoal.targetCalories * (userGoal.targetCarbsRatio || 0.5) / 4) : DEFAULT_GOALS.carbs
   const fatsTarget = userGoal ? Math.round(userGoal.targetCalories * (userGoal.targetFatsRatio || 0.3) / 9) : DEFAULT_GOALS.fats
-
-  const macroData = React.useMemo(() => [
-    { name: "Protein", value: todayTotals.protein, color: "hsl(var(--primary))" },
-    { name: "Carbs", value: todayTotals.carbs, color: "hsl(var(--accent))" },
-    { name: "Fats", value: todayTotals.fats, color: "hsl(var(--chart-3))" },
-  ], [todayTotals])
-
-  const totalMacros = todayTotals.protein + todayTotals.carbs + todayTotals.fats
 
   if (!mounted || !currentDate) return null
 
@@ -232,7 +219,6 @@ export default function DashboardPage() {
                    <BarChart data={processWeeklyData(allLogs, currentDate)}>
                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                      <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 12, fontWeight: 600 }} dy={10} />
-                     <YAxis hide />
                      <Tooltip 
                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                        cursor={{ fill: 'hsl(var(--primary) / 0.05)' }}

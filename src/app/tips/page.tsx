@@ -60,6 +60,7 @@ export default function TipsPage() {
 
   React.useEffect(() => {
     // Shuffle and pick 4 tips to display
+    // This happens only on the client after hydration to avoid mismatches
     const shuffled = [...ALL_TIPS].sort(() => 0.5 - Math.random())
     setRandomTips(shuffled.slice(0, 4))
   }, [])
