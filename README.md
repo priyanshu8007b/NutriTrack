@@ -1,7 +1,9 @@
+Here is a crisp, ready-to-copy Markdown README for your **NutriTrack** project, generated based on your repository's structure and commit history.
 # NutriTrack 🥗
 
-> A modern nutrition tracker built for Indian food — log daily meals, track macros, and hit your goals.
+> Nutrition tracker for Indian food — log daily meals and track calories and macros.
 
+# NutriTrack 🍏
 ![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript)
@@ -9,17 +11,28 @@
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-06B6D4?style=flat-square&logo=tailwindcss)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 
+NutriTrack is a web application designed to help users log their daily meals and monitor their dietary preferences. Built with Next.js and Firebase, it offers a simple and intuitive interface for nutrition tracking.
 ![NutriTrack Banner](./docs/hero-banner.png)
 
-NutriTrack helps you log Indian meals with accurate serving sizes and macros. It includes a curated database of 1000+ Indian dishes, a daily dashboard, BMR/TDEE-based goal planner, and Firebase-backed meal history — all in a clean, responsive UI.
+## ✨ Features
+NutriTrack is a web app for logging Indian meals and tracking daily nutrition. It uses a local database of 1000 Indian food items (50 manually defined + 950 generated), a dashboard for daily and weekly totals, a goal calculator, and Firebase for authentication and storage of meal logs.
 
-**Live Demo:** Add your deployment URL here  
+*   **Meal Logging**: Easily record your daily food intake.
+*   **Vegetarian Filter**: A dedicated "Veg Only" switch on the dashboard to filter meal suggestions or logged items, catering to vegetarian preferences.
+*   **Firebase Integration**: Utilizes Firebase for backend services, including authentication and Firestore database for data persistence.
+*   **Modern Frontend**: Built with the latest **Next.js** (App Router) and styled with **Tailwind CSS** for a responsive and clean user interface.
 **Original Design Spec:** [`docs/blueprint.md`](./docs/blueprint.md)
 
+## 🛠️ Tech Stack
 ---
 
+*   **Framework**: [Next.js](https://nextjs.org/) (with App Router)
+*   **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+*   **Backend & Database**: [Firebase](https://firebase.google.com/) (Firestore, Authentication)
+*   **Language**: TypeScript
 ## Table of Contents
 
+## 🚀 Getting Started
 - [Features](#features)
 - [Tech Stack](#tech-stack)
 - [Screenshots](#screenshots)
@@ -33,26 +46,28 @@ NutriTrack helps you log Indian meals with accurate serving sizes and macros. It
 - [Contributing](#contributing)
 - [License](#license)
 
+Follow these steps to get a local copy of the project up and running.
 ---
 
 ## Features
 
-- **Dashboard** — Track today's calories, protein, carbs, and fats vs your targets. See weekly intake trend (Recharts) and recent meals.
-- **Log Meals** — Search 1000+ Indian foods, filter by category (Breakfast / Lunch / Snacks / Dinner) and diet (Veg Only), pick quantities (0.5x steps), and log multiple items at once.
-- **Goals & Calculator** — BMR/TDEE calculator (Mifflin-St Jeor) using gender, age, weight, height, activity level, and goal (Fat Loss / Maintenance / Muscle Gain). Adjust macro distribution with sliders and live energy breakdown.
-- **Food Database** — Browse 1000 items (50 hand-curated + 950 region-varied) with calories, macros, serving size, category, and veg/non-veg indicators. Filter, search, and paginate.
-- **Veg Only Mode** — One-tap toggle synced to Firestore (`userProfiles/{uid}.isVegOnly`) that filters suggestions and logging.
-- **Nutrition Tips** — Bite-size, India-specific guidance.
-- **Auth** — Firebase Authentication with email and anonymous guest sessions. All data scoped to the authenticated user.
-- **Responsive & Accessible** — Tailwind CSS + shadcn/ui + Radix UI, Inter font, light/dark tokens.
+Available in the current codebase (`src/app/*`):
+
+- **Dashboard (`/`)** — Shows today's totals for calories, protein, carbs, and fats versus targets stored in Firestore. Includes a 7-day bar chart (Recharts) and the 5 most recent meal logs. Has a Veg Only switch that updates `userProfiles/{uid}.isVegOnly`.
+- **Log Meals (`/log`)** — Search across 1000 items, filter by category (All / Breakfast / Lunch / Snacks / Dinner) and by the Veg Only setting. Select a quantity in 0.5 steps via a dialog, add items to a plate, adjust quantity or remove, and save all items to `userProfiles/{uid}/mealLogs`.
+- **Goals (`/goals`)** — Calculator that uses the Mifflin-St Jeor equation with inputs for gender, age, weight, height, activity level, and goal (Fat Loss -400 kcal / Maintenance / Muscle Gain +300 kcal). Result can be fine-tuned with a slider. Separate sliders for protein, carbs, and fats (0–400 g) with a stack bar showing the calorie breakdown. Saves to `userProfiles/{uid}/userGoal/userGoal`.
+- **Food Database (`/database`)** — Table of 1000 items from `src/lib/mock-data.ts`. Columns: name, serving size, calories, protein, carbs, fats, category, veg/non-veg flag. Filter by text search, category dropdown, and diet (All / Veg / Non-Veg). Shows 30 items initially with a “Load 50 More” button.
+- **Nutrition Tips (`/tips`)** — Displays 4 random tips picked from a list of 8 on each load, plus a static daily habit card.
+- **Authentication (`/login`)** — Firebase Authentication with Google sign-in and anonymous guest sign-in (`initiateAnonymousSignIn` / `initiateGoogleSignIn`). If not signed in, the dashboard shows a prompt to sign in. All meal logs and goals are stored under the current user’s UID.
+- **Suggestions (`/suggestions`)** — Currently returns “This feature has been removed.”
 
 ## Tech Stack
 
 - **Framework:** Next.js 15 (App Router, Turbopack), React 19, TypeScript 5
-- **Styling:** Tailwind CSS 3.4, tailwindcss-animate, shadcn/ui, Radix UI, lucide-react
-- **Charts & Forms:** Recharts, react-hook-form, zod
+- **Styling:** Tailwind CSS 3.4, tailwindcss-animate, shadcn/ui, Radix UI, lucide-react, Inter font
+- **Charts & Forms:** Recharts 2.15, react-hook-form, zod
 - **Backend:** Firebase 11 (Authentication, Cloud Firestore, App Hosting)
-- **Config:** `next.config.ts` allows `placehold.co`, `images.unsplash.com`, `picsum.photos`
+- **Config:** `next.config.ts` allows `placehold.co`, `images.unsplash.com`, `picsum.photos` and sets `typescript.ignoreBuildErrors` and `eslint.ignoreDuringBuilds`
 
 ## Screenshots
 
@@ -71,6 +86,62 @@ NutriTrack helps you log Indian meals with accurate serving sizes and macros. It
 
 ### Prerequisites
 
+*   Node.js (v18 or later recommended)
+*   npm, yarn, or pnpm
+*   A Firebase project (for backend services)
+
+### Installation
+
+1.  **Clone the repository**
+    ```bash
+    git clone https://github.com/priyanshu8007b/NutriTrack.git
+    ```
+2.  **Navigate to the project directory**
+    ```bash
+    cd NutriTrack
+    ```
+3.  **Install dependencies**
+    ```bash
+    npm install
+    # or
+    yarn install
+    # or
+    pnpm install
+    ```
+4.  **Set up Firebase Configuration**
+    *   Create a `.env.local` file in the root directory.
+    *   Add your Firebase project configuration keys to the file. You'll need variables similar to:
+        ```
+        NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
+        NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_auth_domain
+        NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+        ... other config vars
+        ```
+    *   Ensure your Firebase project has Firestore and Authentication enabled.
+
+5.  **Run the development server**
+    ```bash
+    npm run dev
+    # or
+    yarn dev
+    # or
+    pnpm dev
+    ```
+6.  Open [http://localhost:3000](http://localhost:3000) with your browser to see the application.
+
+## 📁 Project Structure
+
+*   `src/app/`: Contains the main application code using the Next.js App Router. The main entry point is `src/app/page.tsx`.
+*   `firestore.rules`: Security rules for your Firestore database.
+*   `public/`: Static assets.
+
+## 🤝 Contributing
+
+Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/priyanshu8007b/NutriTrack/issues) if you have any questions.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. *(Note: A license file was not present in the repository view; you may want to add one.)*
 - Node.js 18+ (Node 20 recommended)
 - npm, yarn, or pnpm
 - A Firebase project (free tier is enough)
@@ -169,7 +240,7 @@ npm start
 
 ## Data Model
 
-Defined in `docs/backend.json` and implemented in `src/lib/mock-data.ts`:
+Defined in `docs/backend.json` and implemented in `src/lib/mock-data.ts` (local mock data, not a remote verified source):
 
 **FoodItem**
 ```ts
@@ -186,14 +257,15 @@ Defined in `docs/backend.json` and implemented in `src/lib/mock-data.ts`:
 }
 ```
 
-The file exports `INDIAN_FOOD_DATABASE` (1000 items) and `FOOD_BY_ID` (`Map<string, FoodItem>`) for O(1) lookups.
+- `INDIAN_FOOD_DATABASE` contains 1000 items: `BASE_DATABASE` (50 manually defined North/South/West/East dishes) + 950 programmatically generated items (region + ingredient + type). Exported with `FOOD_BY_ID` (`Map<string, FoodItem>`) for lookup by ID.
+- `DEFAULT_GOALS` is `{ calories: 2000, protein: 100, carbs: 250, fats: 65 }` used when no user goal is saved.
 
 **Firestore collections**
 
 - `userProfiles/{uid}` — `{ id, email, isVegOnly, createdAt }`
 - `userProfiles/{uid}/mealLogs/{id}` — `{ userId, foodId, quantity, loggedAt }`
-- `userProfiles/{uid}/userGoal/userGoal` — `{ targetCalories, targetProteinRatio, targetCarbsRatio, targetFatsRatio }`
-- `foodItems/{id}` — global catalog (public read, admin write)
+- `userProfiles/{uid}/userGoal/userGoal` — `{ targetCalories, targetProteinRatio, targetCarbsRatio, targetFatsRatio, updatedAt }`
+- `foodItems/{id}` — global catalog (public read, admin write) — currently not populated; app uses local `mock-data.ts`
 - `roles_admin/{uid}` — admin flag
 
 ## Firestore Rules
@@ -240,19 +312,17 @@ Next.js image domains are already allowed in `next.config.ts`.
 
 ## Contributing
 
-Contributions are welcome!
-
 1. Fork the repo
 2. Create a branch: `git checkout -b feat/your-feature`
 3. Make changes and run `npm run typecheck && npm run build`
 4. Commit, push, and open a pull request
 
-Adding a new dish? Edit `BASE_DATABASE` in `src/lib/mock-data.ts` and include name, macros, category, and serving size.
+To add a dish, edit `BASE_DATABASE` in `src/lib/mock-data.ts` and include name, calories, protein, carbs, fats, category, isVeg, and servingSize.
 
 ## License
 
-MIT — see [LICENSE](LICENSE) if present. If no license file exists, the project is intended to be MIT.
+No `LICENSE` file is currently in the repository. Add one if you need a specific license (e.g., MIT).
 
 ---
 
-Built with Next.js, Firebase, and Tailwind CSS. Design tokens: Mustard `#C68C09`, Terracotta `#F2651A`, Off-White `#F9F3E7`, font Inter.
+Design tokens in `src/app/globals.css`: `--primary` 42 88% 41% (#C68C09), `--accent` 21 89% 53% (#F2651A), `--background` 40 50% 94% (#F9F3E7), font Inter.
